@@ -69,7 +69,7 @@
           </button>
         </div>
         @if (passwordError()) {
-          <p class="text-red-700 mt-3 text-lg font-bold">Contraseña incorrecta</p>
+          <p class="text-red-700 mt-3 text-lg font-bold">{{ errorMessage() }}</p>
         }
       </div>
     </div>

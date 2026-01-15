@@ -1,6 +1,11 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/countdown-app",
+  "outputDirectory": "dist/countdown-app/browser",
   "framework": "angular",
-  "nodejs": "20.x"
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

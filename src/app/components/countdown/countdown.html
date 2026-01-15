@@ -1,0 +1,86 @@
+<div class="flex items-center justify-center min-h-screen w-full">
+  @if (!countdownReached()) {
+    <div class="text-center text-white">
+      <h1 class="text-5xl md:text-6xl font-bold mb-8 tracking-wide">
+        Esta web se abrirá en...
+      </h1>
+      
+      <div class="flex justify-center items-center gap-4 md:gap-6 mb-8 flex-wrap">
+        <div class="flex flex-col items-center gap-2">
+          <span class="text-6xl md:text-7xl font-bold min-w-[140px] bg-white bg-opacity-10 px-4 py-2 rounded-xl backdrop-blur-lg">
+            {{ days() }}
+          </span>
+          <span class="text-sm md:text-base uppercase tracking-wider opacity-80">
+            días
+          </span>
+        </div>
+
+        <span class="text-4xl md:text-5xl font-bold opacity-60 mb-4">:</span>
+
+        <div class="flex flex-col items-center gap-2">
+          <span class="text-6xl md:text-7xl font-bold min-w-[140px] bg-white bg-opacity-10 px-4 py-2 rounded-xl backdrop-blur-lg">
+            {{ hours() }}
+          </span>
+          <span class="text-sm md:text-base uppercase tracking-wider opacity-80">
+            horas
+          </span>
+        </div>
+
+        <span class="text-4xl md:text-5xl font-bold opacity-60 mb-4">:</span>
+
+        <div class="flex flex-col items-center gap-2">
+          <span class="text-6xl md:text-7xl font-bold min-w-[140px] bg-white bg-opacity-10 px-4 py-2 rounded-xl backdrop-blur-lg">
+            {{ minutes() }}
+          </span>
+          <span class="text-sm md:text-base uppercase tracking-wider opacity-80">
+            minutos
+          </span>
+        </div>
+
+        <span class="text-4xl md:text-5xl font-bold opacity-60 mb-4">:</span>
+
+        <div class="flex flex-col items-center gap-2">
+          <span class="text-6xl md:text-7xl font-bold min-w-[140px] bg-white bg-opacity-10 px-4 py-2 rounded-xl backdrop-blur-lg">
+            {{ seconds() }}
+          </span>
+          <span class="text-sm md:text-base uppercase tracking-wider opacity-80">
+            segundos
+          </span>
+        </div>
+      </div>
+
+      <p class="text-2xl md:text-3xl opacity-90 font-bold mb-12">
+        o intenta adivinar la contraseña secreta. Suerte ;)
+      </p>
+
+      <div class="w-full max-w-sm px-4">
+        <div class="flex flex-col gap-3 sm:flex-row">
+          <input
+            #passwordInput
+            type="text"
+            placeholder="Contraseña secreta"
+            class="flex-1 px-4 py-3 rounded-lg bg-white bg-opacity-10 text-white placeholder-white placeholder-opacity-50 backdrop-blur-lg border border-white border-opacity-20 focus:outline-none focus:border-opacity-50 transition-all"
+          />
+          <button
+            (click)="onSubmitPassword(passwordInput)"
+            class="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold rounded-lg backdrop-blur-lg border border-white border-opacity-20 transition-all whitespace-nowrap"
+          >
+            Enviar
+          </button>
+        </div>
+        @if (passwordError()) {
+          <p class="text-white mt-3 text-lg font-bold">{{ errorMessage() }}</p>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="text-center text-white animate-fadeIn">
+      <h1 class="text-7xl md:text-8xl font-bold mb-4">
+        ¡Bienvenido!
+      </h1>
+      <p class="text-3xl md:text-4xl opacity-90">
+        14 de febrero de 2026
+      </p>
+    </div>
+  }
+</div>

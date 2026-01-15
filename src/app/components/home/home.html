@@ -1,0 +1,30 @@
+<div class="flex flex-col items-center justify-center min-h-screen w-full px-4">
+
+  <div class="flex justify-center items-center w-full h-64 bg-gray-400 rounded-lg mb-8">
+    <p class="text-gray-700 text-xl font-semibold">🔐 Aún no...</p>
+  </div>
+
+  <!-- Botones de navegación -->
+  <div class="flex flex-col sm:flex-row gap-4 w-full max-w-2xl mb-8">
+    <button
+      (click)="navigateToPreguntas()"
+      class="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold rounded-lg backdrop-blur-lg border border-white border-opacity-20 transition-all whitespace-nowrap"
+    >
+      ❓ Preguntas
+    </button>
+    <button
+      (click)="navigateToMapa()"
+      class="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold rounded-lg backdrop-blur-lg border border-white border-opacity-20 transition-all whitespace-nowrap"
+    >
+      🗺️ Mapa
+    </button>
+    <button
+      disabled
+      class="flex-1 px-6 py-3 bg-gray-500 cursor-not-allowed text-white font-semibold rounded-lg backdrop-blur-lg border border-white border-opacity-20 opacity-50"
+      title="Bloqueado por ahora"
+    >
+      🔐 Secreto
+    </button>
+  </div>
+
+</div>

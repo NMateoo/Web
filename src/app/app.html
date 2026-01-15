@@ -56,16 +56,21 @@
       <div class="w-full max-w-sm px-4">
         <div class="flex flex-col gap-3 sm:flex-row">
           <input
+            #passwordInput
             type="password"
             placeholder="Contraseña secreta"
             class="flex-1 px-4 py-3 rounded-lg bg-white bg-opacity-10 text-white placeholder-white placeholder-opacity-50 backdrop-blur-lg border border-white border-opacity-20 focus:outline-none focus:border-opacity-50 transition-all"
           />
           <button
+            (click)="onSubmitPassword(passwordInput)"
             class="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold rounded-lg backdrop-blur-lg border border-white border-opacity-20 transition-all whitespace-nowrap"
           >
             Enviar
           </button>
         </div>
+        @if (passwordError()) {
+          <p class="text-red-700 mt-3 text-lg font-bold">Contraseña incorrecta</p>
+        }
       </div>
     </div>
   } @else {

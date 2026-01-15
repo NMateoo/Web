@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  @apply min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-500 to-purple-700;
+  @apply min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-300 to-pink-700;
 }
 
 @keyframes fadeIn {

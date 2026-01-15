@@ -25,6 +25,7 @@ export class App implements OnInit {
   });
 
   countdownReached = signal(false);
+  passwordError = signal(false);
 
   days = computed(() => this.timeRemaining().days);
   hours = computed(() => this.timeRemaining().hours);
@@ -34,6 +35,12 @@ export class App implements OnInit {
   ngOnInit(): void {
     this.updateCountdown();
     setInterval(() => this.updateCountdown(), 1000);
+  }
+
+  onSubmitPassword(passwordInput: HTMLInputElement): void {
+    this.passwordError.set(true);
+    passwordInput.value = '';
+    passwordInput.focus();
   }
 
   private updateCountdown(): void {

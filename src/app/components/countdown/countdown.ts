@@ -20,7 +20,7 @@ interface TimeUnits {
 
 export class Countdown implements OnInit {
   private router = inject(Router);
-  private readonly correctPassword = 'kensington streeet';
+  private readonly correctPassword = 'kensington street';
 
   private timeRemaining = signal<TimeUnits>({
     days: '00',

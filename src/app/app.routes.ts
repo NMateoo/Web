@@ -12,10 +12,6 @@ export const APP_ROUTES: Routes = [
     component: Home,
   },
   {
-    path: 'preguntas',
-    loadComponent: () => import('./components/preguntas/preguntas').then(m => m.Preguntas),
-  },
-  {
     path: 'mapa',
     loadComponent: () => import('./components/mapa/mapa').then(m => m.Mapa),
   },

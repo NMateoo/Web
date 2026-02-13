@@ -1,5 +1,6 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AfterViewInit, Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 @Component({
   selector: 'app-mapa',
@@ -18,16 +19,22 @@ export class Mapa implements OnInit, AfterViewInit {
   private marker: any;
   private L: any;
   private selectedCoords: [number, number] | null = null;
+  private supabase: SupabaseClient;
 
   private tempMarker: any = null;
   howModal = false;
 
-
   isBrowser = false;
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
-  this.isBrowser = isPlatformBrowser(this.platformId);
-}
+    this.isBrowser = isPlatformBrowser(this.platformId);
+    
+    // Inicializar Supabase
+    this.supabase = createClient(
+      'https://jspejuafqxidxnyfxkme.supabase.co', // Reemplaza con tu URL
+      'sb_publishable_d_Yy7ULDAtDLC-CcWv3qDg_eSTht6E5' // Reemplaza con tu clave pública
+    );
+  }
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
@@ -46,13 +53,10 @@ export class Mapa implements OnInit, AfterViewInit {
   }
 
   private async loadLeaflet(): Promise<void> {
-  const leaflet = await import('leaflet');
-
-  this.L = leaflet.default ?? leaflet;
-
-  this.fixLeafletIconPath();
-}
-
+    const leaflet = await import('leaflet');
+    this.L = leaflet.default ?? leaflet;
+    this.fixLeafletIconPath();
+  }
 
   private initMap(): void {
     const sevillaCoords: [number, number] = [37.3891, -5.9845];
@@ -77,7 +81,7 @@ export class Mapa implements OnInit, AfterViewInit {
   }
 
   // 📸 Cuando se selecciona imagen
-  onImageSelected(event: any): void {
+  async onImageSelected(event: any): Promise<void> {
     if (!this.selectedCoords) {
       alert('Primero haz click en el mapa');
       return;
@@ -86,22 +90,43 @@ export class Mapa implements OnInit, AfterViewInit {
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
+    try {
+      // Subir imagen a Supabase Storage
+      const fileName = `${Date.now()}_${file.name}`;
+      
+      const { data: uploadData, error: uploadError } = await this.supabase.storage
+        .from('fotos-mapa') // Nombre de tu bucket
+        .upload(fileName, file);
 
-    reader.onload = () => {
-      const imageBase64 = reader.result as string;
+      if (uploadError) {
+        console.error('Error subiendo imagen:', uploadError);
+        alert('Error al subir la imagen');
+        return;
+      }
 
+      // Obtener URL pública
+      const { data: { publicUrl } } = this.supabase.storage
+        .from('fotos-mapa')
+        .getPublicUrl(fileName);
+
+      // Guardar metadatos en base de datos
       const photoData = {
         lat: this.selectedCoords![0],
         lng: this.selectedCoords![1],
-        image: imageBase64
+        image_url: publicUrl,
+        created_at: new Date().toISOString()
       };
 
-      this.savePhoto(photoData);
+      await this.savePhoto(photoData);
       this.addPhotoMarker(photoData);
-    };
-
-    reader.readAsDataURL(file);
+      
+      this.selectedCoords = null;
+      alert('Foto guardada correctamente!');
+      
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al procesar la imagen');
+    }
   }
 
   private addPhotoMarker(photo: any): void {
@@ -109,20 +134,34 @@ export class Mapa implements OnInit, AfterViewInit {
       .addTo(this.map)
       .bindPopup(`
         <div style="width:200px">
-          <img src="${photo.image}" style="width:100%; border-radius:8px"/>
+          <img src="${photo.image_url}" style="width:100%; border-radius:8px"/>
         </div>
       `);
   }
 
-  private savePhoto(photo: any): void {
-    const existing = JSON.parse(localStorage.getItem('mapPhotos') || '[]');
-    existing.push(photo);
-    localStorage.setItem('mapPhotos', JSON.stringify(existing));
+  private async savePhoto(photo: any): Promise<void> {
+    const { data, error } = await this.supabase
+      .from('map_photos') // Nombre de tu tabla
+      .insert([photo]);
+
+    if (error) {
+      console.error('Error guardando en DB:', error);
+      throw error;
+    }
   }
 
-  private loadSavedPhotos(): void {
-    const saved = JSON.parse(localStorage.getItem('mapPhotos') || '[]');
-    saved.forEach((photo: any) => {
+  private async loadSavedPhotos(): Promise<void> {
+    const { data: photos, error } = await this.supabase
+      .from('map_photos')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error cargando fotos:', error);
+      return;
+    }
+
+    photos?.forEach((photo: any) => {
       this.addPhotoMarker(photo);
     });
   }

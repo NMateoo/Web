@@ -1,21 +1,25 @@
 <div class="flex flex-col items-center justify-center min-h-screen w-full px-4">
-
-  <div class="flex justify-center items-center w-full h-64 bg-gray-400 rounded-lg mb-8">
-    <p class="text-gray-700 text-xl font-semibold">🔐 Aún no...</p>
+  <p class="text-5xl md:text-6xl font-bold mb-8 tracking-wide text-white">Fotitos nuestras 😊</p>
+  <div class="flex justify-center items-center w-full h-64 bg-gray-400 rounded-lg mb-8 overflow-hidden">
+    @if (currentPhoto()) {
+      <img 
+        [src]="currentPhoto()!.image_url" 
+        [alt]="'Foto en ' + currentPhoto()!.lat + ', ' + currentPhoto()!.lng"
+        class="w-full h-full object-cover"
+      />
+    } @else {
+      <p class="text-gray-700 text-xl font-semibold">🔐 Aún no...</p>
+    }
   </div>
 
   <!-- Botones de navegación -->
   <div class="flex flex-col sm:flex-row gap-4 w-full max-w-2xl mb-8">
-    <button
-      (click)="navigateToMapa()"
-      class="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold rounded-lg backdrop-blur-lg border border-white border-opacity-20 transition-all whitespace-nowrap"
-    >
+    <button (click)="navigateToMapa()"
+      class="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold rounded-lg backdrop-blur-lg border border-white border-opacity-20 transition-all whitespace-nowrap">
       🗺️ Mapa
     </button>
-    <button
-      (click)="navigateToPreguntas()"
-      class="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold rounded-lg backdrop-blur-lg border border-white border-opacity-20 transition-all whitespace-nowrap"
-    >
+    <button (click)="navigateToPreguntas()"
+      class="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold rounded-lg backdrop-blur-lg border border-white border-opacity-20 transition-all whitespace-nowrap">
       🔐 Juego
     </button>
   </div>

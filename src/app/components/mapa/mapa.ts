@@ -28,7 +28,7 @@ export class Mapa implements OnInit, AfterViewInit {
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     this.isBrowser = isPlatformBrowser(this.platformId);
-    
+
     // Inicializar Supabase
     this.supabase = createClient(
       'https://jspejuafqxidxnyfxkme.supabase.co', // Reemplaza con tu URL
@@ -59,10 +59,10 @@ export class Mapa implements OnInit, AfterViewInit {
   }
 
   private initMap(): void {
-    const sevillaCoords: [number, number] = [37.3891, -5.9845];
+    const granadaCoords: [number, number] = [37.1773, -3.5986]; // Granada
 
     this.map = this.L.map('map', {
-      center: sevillaCoords,
+      center: granadaCoords,
       zoom: 13
     });
 
@@ -93,7 +93,7 @@ export class Mapa implements OnInit, AfterViewInit {
     try {
       // Subir imagen a Supabase Storage
       const fileName = `${Date.now()}_${file.name}`;
-      
+
       const { data: uploadData, error: uploadError } = await this.supabase.storage
         .from('fotos-mapa') // Nombre de tu bucket
         .upload(fileName, file);
@@ -119,10 +119,10 @@ export class Mapa implements OnInit, AfterViewInit {
 
       await this.savePhoto(photoData);
       this.addPhotoMarker(photoData);
-      
+
       this.selectedCoords = null;
       alert('Foto guardada correctamente!');
-      
+
     } catch (error) {
       console.error('Error:', error);
       alert('Error al procesar la imagen');

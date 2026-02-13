@@ -31,8 +31,8 @@ export class Mapa implements OnInit, AfterViewInit {
 
     // Inicializar Supabase
     this.supabase = createClient(
-      'https://jspejuafqxidxnyfxkme.supabase.co', // Reemplaza con tu URL
-      'sb_publishable_d_Yy7ULDAtDLC-CcWv3qDg_eSTht6E5' // Reemplaza con tu clave pública
+      'https://jspejuafqxidxnyfxkme.supabase.co',
+      'sb_publishable_d_Yy7ULDAtDLC-CcWv3qDg_eSTht6E5'
     );
   }
 
@@ -95,7 +95,7 @@ export class Mapa implements OnInit, AfterViewInit {
       const fileName = `${Date.now()}_${file.name}`;
 
       const { data: uploadData, error: uploadError } = await this.supabase.storage
-        .from('fotos-mapa') // Nombre de tu bucket
+        .from('fotos-mapa')
         .upload(fileName, file);
 
       if (uploadError) {
@@ -130,7 +130,33 @@ export class Mapa implements OnInit, AfterViewInit {
   }
 
   private addPhotoMarker(photo: any): void {
-    this.L.marker([photo.lat, photo.lng])
+    // Crear icono personalizado con la imagen en miniatura
+    const photoIcon = this.L.divIcon({
+      className: 'custom-photo-marker',
+      html: `
+        <div style="
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          overflow: hidden;
+          border: 3px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          cursor: pointer;
+        ">
+          <img src="${photo.image_url}" 
+               style="width: 100%; 
+                      height: 100%; 
+                      object-fit: cover;
+                      display: block;" 
+               alt="foto"/>
+        </div>
+      `,
+      iconSize: [50, 50],
+      iconAnchor: [25, 25],
+      popupAnchor: [0, -25]
+    });
+
+    this.L.marker([photo.lat, photo.lng], { icon: photoIcon })
       .addTo(this.map)
       .bindPopup(`
         <div style="width:200px">
@@ -141,7 +167,7 @@ export class Mapa implements OnInit, AfterViewInit {
 
   private async savePhoto(photo: any): Promise<void> {
     const { data, error } = await this.supabase
-      .from('map_photos') // Nombre de tu tabla
+      .from('map_photos')
       .insert([photo]);
 
     if (error) {

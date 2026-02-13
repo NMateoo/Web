@@ -81,7 +81,7 @@ export class Home implements OnInit, OnDestroy {
     this.intervalId = window.setInterval(() => {
       this.currentIndex = (this.currentIndex + 1) % this.photos.length;
       this.currentPhoto.set(this.photos[this.currentIndex]);
-    }, 10000);
+    }, 7000);
   }
 
   navigateToPreguntas(): void {

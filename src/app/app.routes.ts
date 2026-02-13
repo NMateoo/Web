@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { Countdown } from './components/countdown/countdown';
 import { Home } from './components/home/home';
+import { Mapa } from './components/mapa/mapa';
 
 export const APP_ROUTES: Routes = [
   {
@@ -13,6 +14,6 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'mapa',
-    loadComponent: () => import('./components/mapa/mapa').then(m => m.Mapa),
+    component: Mapa,
   },
 ];

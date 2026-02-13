@@ -7,6 +7,10 @@
     class="bg-white p-2 rounded shadow"
   />
 
-  <div id="map" class="w-full max-w-screen-xl h-[80vh] rounded-2xl shadow-2xl"></div>
+  <div *ngIf="isBrowser"
+     id="map"
+     class="w-full max-w-screen-xl h-[80vh] rounded-2xl shadow-2xl">
+</div>
+
 
 </div>

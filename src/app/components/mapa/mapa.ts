@@ -46,9 +46,13 @@ export class Mapa implements OnInit, AfterViewInit {
   }
 
   private async loadLeaflet(): Promise<void> {
-    this.L = await import('leaflet');
-    this.fixLeafletIconPath();
-  }
+  const leaflet = await import('leaflet');
+
+  this.L = leaflet.default ?? leaflet;
+
+  this.fixLeafletIconPath();
+}
+
 
   private initMap(): void {
     const sevillaCoords: [number, number] = [37.3891, -5.9845];

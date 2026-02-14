@@ -159,8 +159,8 @@ export class Mapa implements OnInit, AfterViewInit {
     this.L.marker([photo.lat, photo.lng], { icon: photoIcon })
       .addTo(this.map)
       .bindPopup(`
-        <div style="width:200px">
-          <img src="${photo.image_url}" class="w-full h-full object-contain"/>
+        <div class="w-[200px] h-[200px] bg-gray-100 rounded flex items-center justify-center">
+          <img src="${photo.image_url}" class="max-w-full max-h-full object-contain"/>
         </div>
       `);
   }

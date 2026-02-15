@@ -5,7 +5,7 @@
       <img 
         [src]="currentPhoto()!.image_url" 
         [alt]="'Foto en ' + currentPhoto()!.lat + ', ' + currentPhoto()!.lng"
-        class="w-full h-full object-cover"
+        class="w-full h-full object-contain"
       />
     } @else {
       <p class="text-gray-700 text-xl font-semibold">🔐 Aún no...</p>

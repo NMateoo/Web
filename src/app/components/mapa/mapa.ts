@@ -38,6 +38,17 @@ export class Mapa implements OnInit, AfterViewInit {
   uploadError = signal<string | null>(null);
   isDeleting = signal(false);
 
+  // Notificaciones
+  notification = signal<string>('');
+  notificationType = signal<'success' | 'error' | 'pending'>('success');
+  showNotification = signal(false);
+  private notificationTimeout: any;
+
+  // Confirmación
+  showConfirmDialog = signal(false);
+  confirmMessage = signal<string>('');
+  private confirmCallback: (() => void) | null = null;
+
   isBrowser = false;
 
   constructor() {
@@ -363,13 +374,19 @@ export class Mapa implements OnInit, AfterViewInit {
   }
 
   private async saveMedia(media: any): Promise<string | null> {
+    // Remover created_at para que Supabase lo genere automáticamente
+    const { created_at, ...mediaWithoutTimestamp } = media;
+    
+    console.log('Datos a insertar:', JSON.stringify(mediaWithoutTimestamp, null, 2));
+    
     const { data, error } = await this.supabase
       .from('map_photos')
-      .insert([media])
+      .insert([mediaWithoutTimestamp])
       .select('id');
 
     if (error) {
       console.error('Error guardando en DB:', error);
+      console.error('Detalles del error:', JSON.stringify(error, null, 2));
       throw error;
     }
 
@@ -469,65 +486,65 @@ export class Mapa implements OnInit, AfterViewInit {
 
       if (error) {
         console.error('Error actualizando ubicación:', error);
-        alert('Error al actualizar la ubicación');
+        this.showNotificationMessage('Error al actualizar la ubicación', 'error');
         return;
       }
 
-      alert('Ubicación actualizada correctamente');
+      this.showNotificationMessage('Ubicación actualizada correctamente', 'success');
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al actualizar la ubicación');
+      this.showNotificationMessage('Error al actualizar la ubicación', 'error');
     }
   }
 
   private async deleteMedia(id: number, mediaUrl: string, mediaType: string): Promise<void> {
-    if (!confirm('¿Estás seguro de que deseas borrar esto?')) {
-      return;
-    }
+    this.confirmMessage.set('¿Estás seguro de que deseas borrar esto?');
+    this.confirmCallback = async () => {
+      try {
+        this.isDeleting.set(true);
+        
+        // Extraer nombre del archivo de la URL
+        const urlParts = mediaUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        const bucket = mediaType === 'video' ? 'videos-mapa' : 'fotos-mapa';
 
-    try {
-      this.isDeleting.set(true);
-      
-      // Extraer nombre del archivo de la URL
-      const urlParts = mediaUrl.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-      const bucket = mediaType === 'video' ? 'videos-mapa' : 'fotos-mapa';
+        // Eliminar de Storage
+        const { error: deleteError } = await this.supabase.storage
+          .from(bucket)
+          .remove([fileName]);
 
-      // Eliminar de Storage
-      const { error: deleteError } = await this.supabase.storage
-        .from(bucket)
-        .remove([fileName]);
+        if (deleteError) {
+          console.error('Error eliminando archivo de Storage:', deleteError);
+          this.showNotificationMessage('Error al eliminar el archivo', 'error');
+          this.isDeleting.set(false);
+          return;
+        }
 
-      if (deleteError) {
-        console.error('Error eliminando archivo de Storage:', deleteError);
-        alert('Error al eliminar el archivo');
+        // Eliminar de la base de datos
+        const { error: dbError } = await this.supabase
+          .from('map_photos')
+          .delete()
+          .eq('id', id);
+
+        if (dbError) {
+          console.error('Error eliminando de la BD:', dbError);
+          this.showNotificationMessage('Error al eliminar de la base de datos', 'error');
+          this.isDeleting.set(false);
+          return;
+        }
+
+        // Recargar el mapa para reflejar los cambios
+        this.ngZone.run(() => {
+          window.location.reload();
+        });
+
+      } catch (error) {
+        console.error('Error al eliminar:', error);
+        this.showNotificationMessage('Error al eliminar el archivo', 'error');
         this.isDeleting.set(false);
-        return;
       }
-
-      // Eliminar de la base de datos
-      const { error: dbError } = await this.supabase
-        .from('map_photos')
-        .delete()
-        .eq('id', id);
-
-      if (dbError) {
-        console.error('Error eliminando de la BD:', dbError);
-        alert('Error al eliminar de la base de datos');
-        this.isDeleting.set(false);
-        return;
-      }
-
-      // Recargar el mapa para reflejar los cambios
-      this.ngZone.run(() => {
-        window.location.reload();
-      });
-
-    } catch (error) {
-      console.error('Error al eliminar:', error);
-      alert('Error al eliminar el archivo');
-      this.isDeleting.set(false);
-    }
+    };
+    this.showConfirmDialog.set(true);
   }
 
   private fixLeafletIconPath(): void {
@@ -546,5 +563,40 @@ export class Mapa implements OnInit, AfterViewInit {
     });
 
     this.L.Marker.prototype.options.icon = iconDefault;
+  }
+
+  private showNotificationMessage(message: string, type: 'success' | 'error' | 'pending'): void {
+    if (this.notificationTimeout) {
+      clearTimeout(this.notificationTimeout);
+    }
+    this.notification.set(message);
+    this.notificationType.set(type);
+    this.showNotification.set(true);
+    this.cdr.detectChanges();
+
+    this.notificationTimeout = setTimeout(() => {
+      this.showNotification.set(false);
+      this.cdr.detectChanges();
+    }, 3500);
+  }
+
+  closeNotification(): void {
+    this.showNotification.set(false);
+    if (this.notificationTimeout) {
+      clearTimeout(this.notificationTimeout);
+    }
+  }
+
+  confirmDelete(): void {
+    this.showConfirmDialog.set(false);
+    if (this.confirmCallback) {
+      this.confirmCallback();
+      this.confirmCallback = null;
+    }
+  }
+
+  cancelDelete(): void {
+    this.showConfirmDialog.set(false);
+    this.confirmCallback = null;
   }
 }

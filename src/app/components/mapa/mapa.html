@@ -149,34 +149,94 @@
 
 <!-- Modal de Confirmación para Borrado -->
 @if (showConfirmDialog()) {
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9998]">
-    <div class="bg-white/20 backdrop-blur-lg rounded-2xl shadow-2xl max-w-sm w-full p-8 border border-white/30 flex flex-col gap-6">
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9998]" style="backdrop-filter: blur(4px);">
+    <div style="
+      background: linear-gradient(135deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.95) 100%);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      max-width: 100%;
+      width: 100%;
+      max-width: 400px;
+      padding: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    ">
       <!-- Header -->
       <div>
-        <h2 class="text-xl font-bold text-white mb-2">Confirmar Borrado</h2>
+        <h2 style="
+          font-size: 20px;
+          font-weight: bold;
+          color: white;
+          margin: 0 0 8px 0;
+        ">Confirmar Borrado</h2>
       </div>
 
       <!-- Mensaje -->
-      <div class="bg-white/10 border border-white/20 rounded-lg p-4 backdrop-blur-sm">
-        <p class="text-sm text-white">{{ confirmMessage() }}</p>
+      <div style="
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 16px;
+        backdrop-filter: blur(4px);
+      ">
+        <p style="
+          font-size: 14px;
+          color: white;
+          margin: 0;
+          font-weight: 500;
+        ">{{ confirmMessage() }}</p>
       </div>
 
       <!-- Buttons -->
-      <div class="flex gap-3 pt-2">
+      <div style="display: flex; gap: 12px; padding-top: 8px;">
         <button
           (click)="cancelDelete()"
           [disabled]="isDeleting()"
-          class="flex-1 px-4 py-3 border border-white/40 text-white font-semibold rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          style="
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-weight: 600;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            opacity: {{ isDeleting() ? '0.5' : '1' }};
+          "
+          (mouseenter)="$event.target.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'"
+          (mouseleave)="$event.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'"
         >
           Cancelar
         </button>
         <button
           (click)="confirmDelete()"
           [disabled]="isDeleting()"
-          class="flex-1 px-4 py-3 bg-red-500/50 hover:bg-red-500/70 text-white font-semibold rounded-lg border border-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          style="
+            flex: 1;
+            padding: 12px 16px;
+            background-color: rgba(239, 68, 68, 0.6);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: white;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            opacity: {{ isDeleting() ? '0.5' : '1' }};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+          "
+          (mouseenter)="$event.target.style.backgroundColor = 'rgba(239, 68, 68, 0.8)'"
+          (mouseleave)="$event.target.style.backgroundColor = 'rgba(239, 68, 68, 0.6)'"
         >
           @if (isDeleting()) {
-            <span class="inline-block animate-spin">⏳</span>
+            <span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span>
             <span>Borrando...</span>
           } @else {
             <span>🗑️ Borrar</span>

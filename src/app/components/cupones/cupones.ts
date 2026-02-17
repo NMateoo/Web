@@ -27,10 +27,6 @@ export class Cupones implements OnInit, OnDestroy {
   
   coupons = signal<Coupon[]>([]);
   isLoading = signal(true);
-  notification = signal<string>('');
-  notificationType = signal<'success' | 'error'>('success');
-  showNotification = signal(false);
-  private notificationTimeout: any;
 
   constructor() {
     this.supabase = this.supabaseService.getClient();
@@ -44,9 +40,7 @@ export class Cupones implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.notificationTimeout) {
-      clearTimeout(this.notificationTimeout);
-    }
+    // Cleanup if needed
   }
 
   private initializeCoupons(): void {
@@ -102,7 +96,7 @@ export class Cupones implements OnInit, OnDestroy {
         });
 
       if (error) {
-        this.showNotificationMessage('Error al actualizar cupón', 'error');
+        console.error('Error al actualizar cupón:', error);
         return;
       }
 
@@ -114,29 +108,9 @@ export class Cupones implements OnInit, OnDestroy {
             : c
         )
       );
-
-      this.showNotificationMessage(
-        newUsedState ? '¡Cupón usado! 🎉' : 'Cupón disponible nuevamente',
-        'success'
-      );
     } catch (error) {
       console.error('Error al cambiar cupón:', error);
-      this.showNotificationMessage('Error al cambiar cupón', 'error');
     }
-  }
-
-  private showNotificationMessage(message: string, type: 'success' | 'error'): void {
-    this.notification.set(message);
-    this.notificationType.set(type);
-    this.showNotification.set(true);
-
-    if (this.notificationTimeout) {
-      clearTimeout(this.notificationTimeout);
-    }
-
-    this.notificationTimeout = setTimeout(() => {
-      this.showNotification.set(false);
-    }, 3000);
   }
 
   get usedCount(): number {

@@ -6,6 +6,25 @@
        style="width: 100%; max-width: 1280px; height: 80vh; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); background-color: #f3f4f6;">
     </div>
   }
+
+  <!-- Botón Atrás -->
+  <button
+    onclick="window.history.back()"
+    style="
+      padding: 12px 24px;
+      background-color: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
+    "
+  >
+    ← Atrás
+  </button>
 </div>
 
 <!-- Notificaci\u00f3n Toast -->
@@ -149,92 +168,35 @@
 
 <!-- Modal de Confirmación para Borrado -->
 @if (showConfirmDialog()) {
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9998]" style="backdrop-filter: blur(4px);">
-    <div style="
-      background: linear-gradient(135deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.95) 100%);
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      max-width: 100%;
-      width: 100%;
-      max-width: 400px;
-      padding: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    ">
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9998]">
+    <div class="bg-white/20 backdrop-blur-lg rounded-2xl shadow-2xl max-w-md w-full p-8 border border-white/30 flex flex-col gap-6">
       <!-- Header -->
       <div>
-        <h2 style="
-          font-size: 20px;
-          font-weight: bold;
-          color: white;
-          margin: 0 0 8px 0;
-        ">Confirmar Borrado</h2>
+        <h2 class="text-2xl font-bold text-white mb-2">Confirmar Borrado</h2>
+        <p class="text-white/80 text-sm">¿Estás seguro de que quieres borrar esto?</p>
       </div>
 
       <!-- Mensaje -->
-      <div style="
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 8px;
-        padding: 16px;
-        backdrop-filter: blur(4px);
-      ">
-        <p style="
-          font-size: 14px;
-          color: white;
-          margin: 0;
-          font-weight: 500;
-        ">{{ confirmMessage() }}</p>
+      <div class="bg-white/10 border border-white/20 rounded-lg p-4 backdrop-blur-sm">
+        <p class="text-sm text-white font-medium">{{ confirmMessage() }}</p>
       </div>
 
       <!-- Buttons -->
-      <div style="display: flex; gap: 12px; padding-top: 8px;">
+      <div class="flex gap-3 pt-2">
         <button
           (click)="cancelDelete()"
           [disabled]="isDeleting()"
-          class="confirm-btn-cancel"
-          style="
-            flex: 1;
-            padding: 12px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            font-weight: 600;
-            border-radius: 8px;
-            background-color: rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-          "
-          [style.opacity]="isDeleting() ? '0.5' : '1'"
+          class="flex-1 px-4 py-3 border border-white/40 text-white font-semibold rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Cancelar
         </button>
         <button
           (click)="confirmDelete()"
           [disabled]="isDeleting()"
-          class="confirm-btn-delete"
-          style="
-            flex: 1;
-            padding: 12px 16px;
-            background-color: rgba(239, 68, 68, 0.6);
-            border: 1px solid rgba(239, 68, 68, 0.5);
-            color: white;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-          "
-          [style.opacity]="isDeleting() ? '0.5' : '1'"
+          class="flex-1 px-4 py-3 bg-red-500/30 hover:bg-red-500/50 text-white font-semibold rounded-lg border border-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           @if (isDeleting()) {
-            <span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span>
+            <span class="inline-block animate-spin">⏳</span>
             <span>Borrando...</span>
           } @else {
             <span>🗑️ Borrar</span>
@@ -244,21 +206,6 @@
     </div>
   </div>
 }
-
-<style>
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  .confirm-btn-cancel:hover:not(:disabled) {
-    background-color: rgba(255, 255, 255, 0.15) !important;
-  }
-
-  .confirm-btn-delete:hover:not(:disabled) {
-    background-color: rgba(239, 68, 68, 0.8) !important;
-  }
-</style>
 
 <style>
   @keyframes spin {

@@ -90,24 +90,4 @@
     </div>
   </div>
 
-  <!-- Notificación Toast -->
-  @if (showNotification()) {
-    <div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-90vw w-full px-4">
-      <div 
-        [class.border-l-4]="true"
-        [class.border-green-500]="notificationType() === 'success'"
-        [class.border-red-500]="notificationType() === 'error'"
-        class="bg-gray-800 rounded-lg p-4 text-white shadow-2xl flex items-center gap-3"
-      >
-        <span class="text-xl">
-          @if (notificationType() === 'success') {
-            ✓
-          } @else {
-            ×
-          }
-        </span>
-        <span class="text-sm whitespace-nowrap">{{ notification() }}</span>
-      </div>
-    </div>
-  }
 </div>

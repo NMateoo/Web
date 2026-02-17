@@ -90,4 +90,8 @@ export class Home implements OnInit, OnDestroy {
   navigateToMapa(): void {
     this.router.navigate(['/mapa']);
   }
+
+  navigateToCupones(): void {
+    this.router.navigate(['/cupones']);
+  }
 }

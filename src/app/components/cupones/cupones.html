@@ -1,0 +1,113 @@
+<div class="min-h-screen w-full p-4 md:p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-8 md:mb-12">
+      <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">🎟️ Nuestros Cupones</h1>
+      <p class="text-lg text-white/80 mb-6">Haz click en un cupón para marcarlo como usado</p>
+      
+      <!-- Contador de Cupones -->
+      <div class="inline-block bg-white/20 backdrop-blur-lg rounded-full px-6 md:px-8 py-3 border border-white/30">
+        <div class="flex items-center gap-4">
+          <span class="text-sm md:text-base text-white">
+            Usados: <span class="font-bold text-xl">{{ usedCount }}</span>
+          </span>
+          <div class="w-1 h-6 bg-white/30"></div>
+          <span class="text-sm md:text-base text-white">
+            Total: <span class="font-bold text-xl">{{ totalCount }}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="flex items-center justify-center min-h-96">
+        <div class="text-center">
+          <div class="mb-4 text-4xl">⏳</div>
+          <p class="text-white/80">Cargando cupones...</p>
+        </div>
+      </div>
+    }
+
+    <!-- Grid de Cupones -->
+    @if (!isLoading() && coupons().length > 0) {
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4 mb-12">
+        @for (coupon of coupons(); track coupon.id) {
+          <div
+            (click)="toggleCoupon(coupon.id)"
+            [class.opacity-50]="coupon.used"
+            class="relative group cursor-pointer transform transition-all duration-300 hover:scale-110 hover:z-10"
+          >
+            <!-- Contenedor de imagen -->
+            <div class="relative overflow-hidden rounded-lg shadow-lg bg-white/10 backdrop-blur-sm border border-white/20">
+              <!-- Imagen del cupón -->
+              <img
+                [src]="'cupones/' + coupon.id + '.png'"
+                [alt]="'Cupón número ' + coupon.id"
+                class="w-full h-auto object-contain aspect-auto"
+              />
+
+              <!-- Overlay cuando está usado -->
+              @if (coupon.used) {
+                <div class="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-sm">
+                  <div class="text-center">
+                    <span class="text-4xl md:text-5xl mb-2 block">✓</span>
+                    <span class="text-white text-xs md:text-sm font-semibold">Usado</span>
+                  </div>
+                </div>
+              }
+
+              <!-- Efecto hover (disponible) -->
+              @if (!coupon.used) {
+                <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+                  <span class="text-white text-sm font-semibold">Click para usar</span>
+                </div>
+              }
+
+              <!-- Badge del número -->
+              <div class="absolute top-2 right-2 bg-white/90 rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center text-xs md:text-sm font-bold text-gray-800">
+                {{ coupon.id }}
+              </div>
+            </div>
+
+            <!-- Efecto de brillo al pasar el mouse (disponible) -->
+            @if (!coupon.used) {
+              <div class="absolute -inset-2 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg opacity-0 group-hover:opacity-20 blur transition-opacity duration-300 -z-10"></div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Botones de navegación -->
+    <div class="flex justify-center gap-4 py-8">
+      <button
+        onclick="window.history.back()"
+        class="px-6 py-3 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-lg backdrop-blur-lg border border-white/30 transition-all"
+      >
+        ← Atrás
+      </button>
+    </div>
+  </div>
+
+  <!-- Notificación Toast -->
+  @if (showNotification()) {
+    <div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-90vw w-full px-4">
+      <div 
+        [class.border-l-4]="true"
+        [class.border-green-500]="notificationType() === 'success'"
+        [class.border-red-500]="notificationType() === 'error'"
+        class="bg-gray-800 rounded-lg p-4 text-white shadow-2xl flex items-center gap-3"
+      >
+        <span class="text-xl">
+          @if (notificationType() === 'success') {
+            ✓
+          } @else {
+            ×
+          }
+        </span>
+        <span class="text-sm whitespace-nowrap">{{ notification() }}</span>
+      </div>
+    </div>
+  }
+</div>

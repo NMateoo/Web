@@ -18,4 +18,8 @@ export const APP_ROUTES: Routes = [
     path: 'preguntas',
     loadComponent: () => import('./components/preguntas/preguntas').then((m) => m.Preguntas),
   },
+  {
+    path: 'cupones',
+    loadComponent: () => import('./components/cupones/cupones').then((m) => m.Cupones),
+  },
 ];

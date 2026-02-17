@@ -1,12 +1,14 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { AfterViewInit, Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { AfterViewInit, ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseService } from '../../services/supabase.service';
 
 @Component({
   selector: 'app-mapa',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './mapa.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host {
       display: block;
@@ -15,6 +17,9 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 })
 
 export class Mapa implements OnInit, AfterViewInit {
+  private platformId = inject(PLATFORM_ID);
+  private supabaseService = inject(SupabaseService);
+  
   private map: any;
   private marker: any;
   private L: any;
@@ -26,14 +31,10 @@ export class Mapa implements OnInit, AfterViewInit {
 
   isBrowser = false;
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+  constructor() {
     this.isBrowser = isPlatformBrowser(this.platformId);
-
-    // Inicializar Supabase
-    this.supabase = createClient(
-      'https://jspejuafqxidxnyfxkme.supabase.co',
-      'sb_publishable_d_Yy7ULDAtDLC-CcWv3qDg_eSTht6E5'
-    );
+    // Obtener el cliente de Supabase desde el servicio
+    this.supabase = this.supabaseService.getClient();
   }
 
   ngOnInit(): void {
@@ -79,8 +80,8 @@ export class Mapa implements OnInit, AfterViewInit {
     this.map.invalidateSize();
   }
 
-  // 📸 Cuando se selecciona imagen
-  async onImageSelected(event: any): Promise<void> {
+  // 📸 📹 Cuando se selecciona imagen o video
+  async onFileSelected(event: any): Promise<void> {
     if (!this.selectedCoords) {
       alert('Primero haz click en el mapa');
       return;
@@ -90,49 +91,89 @@ export class Mapa implements OnInit, AfterViewInit {
     if (!file) return;
 
     try {
-      // Subir imagen a Supabase Storage
+      // Detectar tipo de archivo basándose en MIME type
+      const fileType = file.type.startsWith('video/') ? 'video' : 'image';
+      
+      // Subir archivo a Supabase Storage
       const fileName = `${Date.now()}_${file.name}`;
+      const bucket = fileType === 'image' ? 'fotos-mapa' : 'videos-mapa';
 
       const { data: uploadData, error: uploadError } = await this.supabase.storage
-        .from('fotos-mapa')
+        .from(bucket)
         .upload(fileName, file);
 
       if (uploadError) {
-        console.error('Error subiendo imagen:', uploadError);
-        alert('Error al subir la imagen');
+        console.error(`Error subiendo ${fileType}:`, uploadError);
+        alert(`Error al subir el ${fileType}`);
         return;
       }
 
       // Obtener URL pública
       const { data: { publicUrl } } = this.supabase.storage
-        .from('fotos-mapa')
+        .from(bucket)
         .getPublicUrl(fileName);
 
       // Guardar metadatos en base de datos
-      const photoData = {
+      const mediaData = {
         lat: this.selectedCoords![0],
         lng: this.selectedCoords![1],
-        image_url: publicUrl,
+        media_url: publicUrl,
+        media_type: fileType,
         created_at: new Date().toISOString()
       };
 
-      await this.savePhoto(photoData);
-      this.addPhotoMarker(photoData);
+      await this.saveMedia(mediaData);
+      this.addMediaMarker(mediaData);
 
       this.selectedCoords = null;
-      alert('Foto guardada correctamente!');
+      alert(`${fileType === 'image' ? 'Foto' : 'Video'} guardada correctamente!`);
+
+      // Limpiar el input
+      event.target.value = '';
 
     } catch (error) {
-      console.error('Error:', error);
-      alert('Error al procesar la imagen');
+      console.error(`Error al procesar archivo:`, error);
+      alert(`Error al procesar el archivo`);
     }
   }
 
-  private addPhotoMarker(photo: any): void {
-    // Crear icono personalizado con la imagen en miniatura
-    const photoIcon = this.L.divIcon({
-      className: 'custom-photo-marker',
-      html: `
+  private addMediaMarker(media: any): void {
+    const isVideo = media.media_type === 'video';
+    
+    // Crear icono personalizado
+    let markerHTML: string;
+    let popupHTML: string;
+    
+    if (isVideo) {
+      // Icono para video con play button
+      markerHTML = `
+        <div style="
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          overflow: hidden;
+          border: 3px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          cursor: pointer;
+          background-color: #1f2937;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <div style="font-size: 28px; color: white;">▶</div>
+        </div>
+      `;
+      popupHTML = `
+        <div style="width: 300px; background-color: #1f2937; border-radius: 8px; overflow: hidden;">
+          <video width="300" height="200" controls style="width: 100%; height: auto; display: block;">
+            <source src="${media.media_url}" type="video/mp4">
+            Tu navegador no soporta videos HTML5
+          </video>
+        </div>
+      `;
+    } else {
+      // Icono para imagen con miniatura
+      markerHTML = `
         <div style="
           width: 50px;
           height: 50px;
@@ -142,32 +183,38 @@ export class Mapa implements OnInit, AfterViewInit {
           box-shadow: 0 2px 8px rgba(0,0,0,0.3);
           cursor: pointer;
         ">
-          <img src="${photo.image_url}" 
+          <img src="${media.media_url}" 
                style="width: 100%; 
                       height: 100%; 
                       object-fit: cover;
                       display: block;" 
                alt="foto"/>
         </div>
-      `,
+      `;
+      popupHTML = `
+        <div style="width: 200px; height: 200px; background-color: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+          <img src="${media.media_url}" style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain;"/>
+        </div>
+      `;
+    }
+    
+    const mediaIcon = this.L.divIcon({
+      className: 'custom-media-marker',
+      html: markerHTML,
       iconSize: [50, 50],
       iconAnchor: [25, 25],
       popupAnchor: [0, -25]
     });
 
-    this.L.marker([photo.lat, photo.lng], { icon: photoIcon })
+    this.L.marker([media.lat, media.lng], { icon: mediaIcon })
       .addTo(this.map)
-      .bindPopup(`
-        <div style="width: 200px; height: 200px; background-color: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-          <img src="${photo.image_url}" style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain;"/>
-        </div>
-      `);
+      .bindPopup(popupHTML);
   }
 
-  private async savePhoto(photo: any): Promise<void> {
+  private async saveMedia(media: any): Promise<void> {
     const { data, error } = await this.supabase
       .from('map_photos')
-      .insert([photo]);
+      .insert([media]);
 
     if (error) {
       console.error('Error guardando en DB:', error);
@@ -176,18 +223,26 @@ export class Mapa implements OnInit, AfterViewInit {
   }
 
   private async loadSavedPhotos(): Promise<void> {
-    const { data: photos, error } = await this.supabase
+    const { data: media, error } = await this.supabase
       .from('map_photos')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error cargando fotos:', error);
+      console.error('Error cargando contenido:', error);
       return;
     }
 
-    photos?.forEach((photo: any) => {
-      this.addPhotoMarker(photo);
+    media?.forEach((item: any) => {
+      // Mantener compatibilidad con datos antiguos
+      const mediaItem = {
+        lat: item.lat,
+        lng: item.lng,
+        media_url: item.media_url || item.image_url,
+        media_type: item.media_type || 'image',
+        created_at: item.created_at
+      };
+      this.addMediaMarker(mediaItem);
     });
   }
 

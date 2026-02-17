@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -17,6 +17,7 @@ interface Pregunta {
   imports: [CommonModule, FormsModule],
   templateUrl: './preguntas.html',
   styleUrl: './preguntas.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Preguntas {
   preguntas: Pregunta[] = [

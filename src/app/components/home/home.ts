@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, OnDestroy, PLATFORM_ID, Inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, OnDestroy, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseService } from '../../services/supabase.service';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 interface MapPhoto {
   lat: number;
@@ -20,6 +21,7 @@ interface MapPhoto {
 export class Home implements OnInit, OnDestroy {
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
+  private supabaseService = inject(SupabaseService);
   private supabase: SupabaseClient;
   
   currentPhoto = signal<MapPhoto | null>(null);
@@ -28,11 +30,8 @@ export class Home implements OnInit, OnDestroy {
   private intervalId?: number;
 
   constructor() {
-    // Inicializar Supabase
-    this.supabase = createClient(
-      'https://jspejuafqxidxnyfxkme.supabase.co',  // Tu URL
-      'sb_publishable_d_Yy7ULDAtDLC-CcWv3qDg_eSTht6E5'  // Tu key completa
-    );
+    // Obtener el cliente de Supabase desde el servicio
+    this.supabase = this.supabaseService.getClient();
   }
 
   ngOnInit(): void {

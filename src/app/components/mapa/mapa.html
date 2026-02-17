@@ -1,10 +1,10 @@
 <div class="fixed inset-0 flex flex-col items-center justify-center p-8 gap-4">
-  
   <input 
     type="file" 
-    accept="image/*" 
-    (change)="onImageSelected($event)"
-    class="bg-white p-2 rounded shadow"
+    accept="image/*,video/*" 
+    (change)="onFileSelected($event)"
+    class="bg-white p-2 rounded shadow cursor-pointer"
+    title="Subir foto o video"
   />
 
   <div *ngIf="isBrowser"

@@ -1,23 +1,21 @@
 import { Routes } from '@angular/router';
-import { Home } from './components/home/home';
-import { Mapa } from './components/mapa/mapa';
-import { Preguntas } from './components/preguntas/preguntas';
 
 export const APP_ROUTES: Routes = [
   {
     path: '',
-    component: Home,
+    loadComponent: () => import('./components/home/home').then((m) => m.Home),
   },
   {
     path: 'home',
-    component: Home,
+    redirectTo: '',
+    pathMatch: 'full',
   },
   {
     path: 'mapa',
-    component: Mapa,
+    loadComponent: () => import('./components/mapa/mapa').then((m) => m.Mapa),
   },
   {
     path: 'preguntas',
-    component: Preguntas,
+    loadComponent: () => import('./components/preguntas/preguntas').then((m) => m.Preguntas),
   },
 ];

@@ -194,6 +194,7 @@
         <button
           (click)="cancelDelete()"
           [disabled]="isDeleting()"
+          class="confirm-btn-cancel"
           style="
             flex: 1;
             padding: 12px 16px;
@@ -205,16 +206,15 @@
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s;
-            opacity: {{ isDeleting() ? '0.5' : '1' }};
           "
-          (mouseenter)="$event.target.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'"
-          (mouseleave)="$event.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'"
+          [style.opacity]="isDeleting() ? '0.5' : '1'"
         >
           Cancelar
         </button>
         <button
           (click)="confirmDelete()"
           [disabled]="isDeleting()"
+          class="confirm-btn-delete"
           style="
             flex: 1;
             padding: 12px 16px;
@@ -226,14 +226,12 @@
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s;
-            opacity: {{ isDeleting() ? '0.5' : '1' }};
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
           "
-          (mouseenter)="$event.target.style.backgroundColor = 'rgba(239, 68, 68, 0.8)'"
-          (mouseleave)="$event.target.style.backgroundColor = 'rgba(239, 68, 68, 0.6)'"
+          [style.opacity]="isDeleting() ? '0.5' : '1'"
         >
           @if (isDeleting()) {
             <span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span>
@@ -246,6 +244,21 @@
     </div>
   </div>
 }
+
+<style>
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .confirm-btn-cancel:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  .confirm-btn-delete:hover:not(:disabled) {
+    background-color: rgba(239, 68, 68, 0.8) !important;
+  }
+</style>
 
 <style>
   @keyframes spin {

@@ -1,5 +1,6 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, NgZone, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { signal, computed } from '@angular/core';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '../../services/supabase.service';
 
@@ -19,15 +20,19 @@ import { SupabaseService } from '../../services/supabase.service';
 export class Mapa implements OnInit, AfterViewInit {
   private platformId = inject(PLATFORM_ID);
   private supabaseService = inject(SupabaseService);
+  private cdr = inject(ChangeDetectorRef);
+  private ngZone = inject(NgZone);
   
   private map: any;
   private marker: any;
   private L: any;
-  private selectedCoords: [number, number] | null = null;
+  protected selectedCoords = signal<[number, number] | null>(null);
   private supabase: SupabaseClient;
 
-  private tempMarker: any = null;
-  howModal = false;
+  showUploadModal = signal(false);
+  selectedFile = signal<File | null>(null);
+  isUploading = signal(false);
+  uploadError = signal<string | null>(null);
 
   isBrowser = false;
 
@@ -71,27 +76,44 @@ export class Mapa implements OnInit, AfterViewInit {
       maxZoom: 19,
     }).addTo(this.map);
 
-    // CLICK EN MAPA
+    // CLICK EN MAPA - Abre el modal
     this.map.on('click', (e: any) => {
-      this.selectedCoords = [e.latlng.lat, e.latlng.lng];
-      alert('Selecciona una imagen para esta ubicación');
+      this.ngZone.run(() => {
+        this.selectedCoords.set([e.latlng.lat, e.latlng.lng]);
+        this.showUploadModal.set(true);
+        this.uploadError.set(null);
+        this.cdr.detectChanges();
+      });
     });
 
     this.map.invalidateSize();
   }
 
-  // 📸 📹 Cuando se selecciona imagen o video
-  async onFileSelected(event: any): Promise<void> {
-    if (!this.selectedCoords) {
-      alert('Primero haz click en el mapa');
+  // � Cuando se selecciona un archivo en el modal
+  onModalFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile.set(file);
+      this.uploadError.set(null);
+    }
+  }
+
+  // 📸 📹 Confirmar y subir archivo
+  async onUploadConfirm(): Promise<void> {
+    if (!this.selectedFile()) {
+      this.uploadError.set('Por favor selecciona una foto o video');
       return;
     }
 
-    const file = event.target.files[0];
-    if (!file) return;
+    if (!this.selectedCoords()) {
+      this.uploadError.set('Coordenadas no válidas');
+      return;
+    }
+
+    this.isUploading.set(true);
 
     try {
-      // Detectar tipo de archivo basándose en MIME type
+      const file = this.selectedFile()!;
       const fileType = file.type.startsWith('video/') ? 'video' : 'image';
       
       // Subir archivo a Supabase Storage
@@ -104,7 +126,8 @@ export class Mapa implements OnInit, AfterViewInit {
 
       if (uploadError) {
         console.error(`Error subiendo ${fileType}:`, uploadError);
-        alert(`Error al subir el ${fileType}`);
+        this.uploadError.set(`Error al subir el ${fileType}`);
+        this.isUploading.set(false);
         return;
       }
 
@@ -115,8 +138,8 @@ export class Mapa implements OnInit, AfterViewInit {
 
       // Guardar metadatos en base de datos
       const mediaData = {
-        lat: this.selectedCoords![0],
-        lng: this.selectedCoords![1],
+        lat: this.selectedCoords()![0],
+        lng: this.selectedCoords()![1],
         media_url: publicUrl,
         media_type: fileType,
         created_at: new Date().toISOString()
@@ -125,16 +148,22 @@ export class Mapa implements OnInit, AfterViewInit {
       await this.saveMedia(mediaData);
       this.addMediaMarker(mediaData);
 
-      this.selectedCoords = null;
-      alert(`${fileType === 'image' ? 'Foto' : 'Video'} guardada correctamente!`);
-
-      // Limpiar el input
-      event.target.value = '';
+      // Limpiar modal
+      this.closeModal();
+      this.isUploading.set(false);
 
     } catch (error) {
       console.error(`Error al procesar archivo:`, error);
-      alert(`Error al procesar el archivo`);
+      this.uploadError.set(`Error al procesar el archivo`);
+      this.isUploading.set(false);
     }
+  }
+
+  closeModal(): void {
+    this.showUploadModal.set(false);
+    this.selectedFile.set(null);
+    this.uploadError.set(null);
+    this.selectedCoords.set(null);
   }
 
   private addMediaMarker(media: any): void {

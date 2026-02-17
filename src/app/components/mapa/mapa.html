@@ -1,15 +1,94 @@
-<div class="fixed inset-0 flex flex-col items-center justify-center p-8 gap-4">
-  <input 
-    type="file" 
-    accept="image/*,video/*" 
-    (change)="onFileSelected($event)"
-    class="bg-white p-2 rounded shadow cursor-pointer"
-    title="Subir foto o video"
-  />
-
-  <div *ngIf="isBrowser"
-     id="map"
-     class="w-full max-w-screen-xl h-[80vh] rounded-2xl shadow-2xl bg-gray-100">
-  </div>
-
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; gap: 16px; background-color: transparent;">
+  <!-- Mapa Container -->
+  @if (isBrowser) {
+    <div
+       id="map"
+       style="width: 100%; max-width: 1280px; height: 80vh; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); background-color: #f3f4f6;">
+    </div>
+  }
 </div>
+
+<!-- Modal overlay -->
+@if (showUploadModal()) {
+  <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 9999;">
+    <div style="background-color: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); max-width: 448px; width: 100%; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+      <!-- Header -->
+      <div>
+        <h2 style="font-size: 24px; font-weight: bold; color: #111827; margin: 0; margin-bottom: 4px;">Agregar Foto o Video</h2>
+        <p style="font-size: 14px; color: #4b5563; margin: 0;">Selecciona una imagen o video para esta ubicación</p>
+      </div>
+
+      <!-- Coordenadas mostradas -->
+      @if (selectedCoords()) {
+        <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px;">
+          <p style="font-size: 12px; color: #0369a1; margin: 0;">
+            📍 Coordenadas: {{ selectedCoords()![0].toFixed(4) }}, {{ selectedCoords()![1].toFixed(4) }}
+          </p>
+        </div>
+      }
+
+      <!-- File Input -->
+      <div>
+        <label style="display: block;">
+          <span style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">Seleccionar archivo</span>
+          <input 
+            type="file" 
+            accept="image/*,video/*" 
+            (change)="onModalFileSelected($event)"
+            [disabled]="isUploading()"
+            style="width: 100%; padding: 12px; border: 2px dashed #d1d5db; border-radius: 8px; cursor: pointer; font-size: 14px; box-sizing: border-box;"
+            #fileInput
+          />
+        </label>
+        
+        <!-- Archivo seleccionado -->
+        @if (selectedFile()) {
+          <div style="display: flex; gap: 8px; background-color: #dcfce7; border: 1px solid #86efac; border-radius: 8px; padding: 8px; margin-top: 8px;">
+            <span style="color: #16a34a; font-weight: 600;">✓</span>
+            <div style="font-size: 14px;">
+              <p style="font-weight: 500; color: #166534; margin: 0;">{{ selectedFile()!.name }}</p>
+              <p style="color: #4ade80; font-size: 12px; margin: 0;">{{ (selectedFile()!.size / 1024).toFixed(1) }} KB</p>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Error message -->
+      @if (uploadError()) {
+        <div style="background-color: #fee2e2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px;">
+          <p style="font-size: 14px; color: #b91c1c; margin: 0;">⚠️ {{ uploadError() }}</p>
+        </div>
+      }
+
+      <!-- Buttons -->
+      <div style="display: flex; gap: 12px; margin-top: 8px;">
+        <button
+          (click)="closeModal()"
+          [disabled]="isUploading()"
+          style="flex: 1; padding: 10px 16px; border: 1px solid #d1d5db; color: #374151; font-weight: 500; border-radius: 8px; background-color: white; cursor: pointer; transition: background-color 0.2s;"
+        >
+          Cancelar
+        </button>
+        <button
+          (click)="onUploadConfirm()"
+          [disabled]="!selectedFile() || isUploading()"
+          style="flex: 1; padding: 10px 16px; background-color: #2563eb; color: white; font-weight: 500; border-radius: 8px; border: none; cursor: pointer; transition: background-color 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;"
+        >
+          @if (isUploading()) {
+            <span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span>
+            Cargando...
+          } @else {
+            ⬆️ Subir
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<style>
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>

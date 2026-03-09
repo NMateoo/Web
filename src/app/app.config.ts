@@ -1,5 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import { NgxParticlesModule } from '@tsparticles/angular';
 import { provideRouter } from '@angular/router';
 import { APP_ROUTES } from './app.routes';
 

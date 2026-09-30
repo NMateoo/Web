@@ -2,6 +2,57 @@
   display: block;
 }
 
+.map-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
+}
+
+.map-canvas {
+  width: min(100%, 80rem);
+  min-height: 0;
+  flex: 1 1 auto;
+  border-radius: 1rem;
+  background: #f3f4f6;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 25%);
+}
+
+.map-actions {
+  display: flex;
+  width: min(100%, 80rem);
+  flex: 0 0 auto;
+  gap: 0.65rem;
+}
+
+.map-actions .modal-button {
+  flex: 1;
+}
+
+@media (min-width: 768px) {
+  .map-page {
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .map-canvas {
+    flex: 0 1 80vh;
+    min-height: 20rem;
+  }
+
+  .map-actions {
+    flex: 0 0 auto;
+  }
+
+  .map-actions .modal-button {
+    flex: 0 0 auto;
+  }
+}
+
 .modal-backdrop {
   background: rgb(15 23 42 / 55%);
   backdrop-filter: blur(5px);

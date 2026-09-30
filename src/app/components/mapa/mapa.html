@@ -1,12 +1,11 @@
-<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; gap: 16px; background-color: transparent;">
+<main class="map-page">
   <!-- Mapa Container -->
   @if (isBrowser) {
-    <div
-       id="map"
-       style="width: 100%; max-width: 1280px; height: 80vh; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); background-color: #f3f4f6;">
+    <div id="map" class="map-canvas">
     </div>
   }
 
+  <nav class="map-actions" aria-label="Acciones del mapa">
   <button
     (click)="openAlbums()"
     class="modal-button modal-button--secondary"
@@ -21,7 +20,8 @@
   >
     ← Atrás
   </button>
-</div>
+  </nav>
+</main>
 
 <!-- Notificaci\u00f3n Toast -->
 @if (showNotification()) {

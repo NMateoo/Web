@@ -127,7 +127,6 @@ export class Home implements OnInit, OnDestroy {
     this.showWelcomeModal.set(false);
   }
 
-  navigateToPreguntas(): void { this.router.navigate(['/preguntas']); }
   navigateToMapa(): void { this.router.navigate(['/mapa']); }
   navigateToCupones(): void { this.router.navigate(['/cupones']); }
 }

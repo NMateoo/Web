@@ -1,1 +1,87 @@
-#map { height: 180px; }
+:host {
+  display: block;
+}
+
+.modal-backdrop {
+  background: rgb(15 23 42 / 55%);
+  backdrop-filter: blur(5px);
+}
+
+.modal-panel {
+  color: #fff;
+  background: rgb(255 255 255 / 14%);
+  border: 1px solid rgb(255 255 255 / 28%);
+  box-shadow: 0 24px 64px rgb(15 23 42 / 28%);
+  backdrop-filter: blur(22px);
+}
+
+.modal-panel h2 {
+  color: #fff;
+}
+
+.modal-input {
+  width: 100%;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 0.75rem;
+  background: rgb(15 23 42 / 32%);
+  padding: 0.75rem 1rem;
+  color: #fff;
+}
+
+.modal-input::placeholder {
+  color: rgb(255 255 255 / 62%);
+}
+
+.modal-input option {
+  color: #0f172a;
+}
+
+.modal-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 0.75rem;
+  padding: 0.65rem 1rem;
+  color: #fff;
+  font-weight: 600;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.modal-button--secondary {
+  background: rgb(255 255 255 / 10%);
+}
+
+.modal-button--secondary:hover {
+  background: rgb(255 255 255 / 20%);
+}
+
+.modal-button--primary {
+  border-color: rgb(244 114 182 / 65%);
+  background: rgb(219 39 119 / 65%);
+}
+
+.modal-button--primary:hover {
+  background: rgb(219 39 119 / 85%);
+}
+
+.modal-button--danger {
+  border-color: rgb(248 113 113 / 55%);
+  background: rgb(185 28 28 / 45%);
+}
+
+.modal-button--danger:hover {
+  background: rgb(185 28 28 / 68%);
+}
+
+.modal-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.modal-button:focus-visible,
+.modal-input:focus-visible {
+  outline: 2px solid #f9a8d4;
+  outline-offset: 2px;
+}

@@ -13,12 +13,8 @@ interface Album {
   selector: 'app-mapa',
   imports: [CommonModule],
   templateUrl: './mapa.html',
+  styleUrl: './mapa.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [`
-    :host {
-      display: block;
-    }
-  `]
 })
 
 export class Mapa implements AfterViewInit, OnDestroy {
@@ -305,110 +301,55 @@ export class Mapa implements AfterViewInit, OnDestroy {
     this.selectedAlbumId.set(null);
   }
 
-  private async addMediaMarker(media: any, locationName?: string): Promise<void> {
-    const isVideo = media.media_type === 'video';
-    
-    // Obtener el nombre del lugar (usar el guardado o hacer reverse geocoding)
-    const resolvedLocationName = media.location_name || locationName || `${media.lat.toFixed(4)}, ${media.lng.toFixed(4)}`;
-    
-    // Crear icono personalizado
-    let markerHTML: string;
-    let popupHTML: string;
-    
-    if (isVideo) {
-      // Icono para video con play button
-      markerHTML = `
-        <div style="
-          width: 50px;
-          height: 50px;
-          border-radius: 50%;
-          overflow: hidden;
-          border: 3px solid white;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          cursor: pointer;
-          background-color: #1f2937;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        ">
-          <div style="font-size: 28px; color: white;">▶</div>
-        </div>
-      `;
-      popupHTML = `
-        <div style="width: 300px; background-color: #1f2937; border-radius: 8px; overflow: hidden;">
-          <video width="300" height="200" controls style="width: 100%; height: auto; display: block;">
-            <source src="${media.media_url}" type="video/mp4">
-            Tu navegador no soporta videos HTML5
-          </video>
-          <div style="padding: 12px;">
-            <div style="display: flex; gap: 4px; margin-bottom: 12px;">
-              <input type="text" class="location-input" data-id="${media.id}" value="${resolvedLocationName}" style="flex: 1; padding: 6px; background-color: white; color: black; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;" />
-              <button class="save-location-btn" data-id="${media.id}" style="padding: 6px 10px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 13px;">💾</button>
-            </div>
-            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-              <button class="nav-prev-btn" data-id="${media.id}" style="flex: 1; padding: 8px; background-color: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px;">⬅️ Anterior</button>
-              <button class="nav-next-btn" data-id="${media.id}" style="flex: 1; padding: 8px; background-color: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px;">Siguiente ➡️</button>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="delete-media-btn" data-id="${media.id}" data-url="${media.media_url}" data-type="${media.media_type}" style="flex: 1; padding: 8px; background-color: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px;">🗑️ Borrar</button>
-            </div>
+  private addMediaMarker(media: any): void {
+    const mediaUrl = this.escapeHtml(String(media.media_url || media.image_url || ''));
+    const id = this.escapeHtml(String(media.id ?? ''));
+    const locationName = this.escapeHtml(String(media.location_name || `${media.lat.toFixed(4)}, ${media.lng.toFixed(4)}`));
+    const markerHTML = media.media_type === 'video'
+      ? '<div class="map-photo-marker map-photo-marker--video" aria-label="Video">&#9654;</div>'
+      : `<div class="map-photo-marker"><img src="${mediaUrl}" alt="" /></div>`;
+    const mediaHTML = media.media_type === 'video'
+      ? `<video class="map-photo-popup__media" src="${mediaUrl}" controls playsinline></video>`
+      : `<img class="map-photo-popup__media" src="${mediaUrl}" alt="Foto del mapa" />`;
+    const popupHTML = `
+      <article class="map-photo-popup">
+        ${mediaHTML}
+        <div class="map-photo-popup__body">
+          <div class="map-photo-popup__field">
+            <label class="sr-only" for="location-${id}">Nombre de ubicacion</label>
+            <input id="location-${id}" type="text" class="location-input map-photo-popup__input" data-id="${id}" value="${locationName}" />
+            <button type="button" class="save-location-btn map-photo-popup__button map-photo-popup__button--primary" data-id="${id}" aria-label="Guardar ubicacion">Guardar</button>
           </div>
-        </div>
-      `;
-    } else {
-      // Icono para imagen con miniatura
-      markerHTML = `
-        <div style="
-          width: 50px;
-          height: 50px;
-          border-radius: 50%;
-          overflow: hidden;
-          border: 3px solid white;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          cursor: pointer;
-        ">
-          <img src="${media.media_url}" 
-               style="width: 100%; 
-                      height: 100%; 
-                      object-fit: cover;
-                      display: block;" 
-               alt="foto"/>
-        </div>
-      `;
-      popupHTML = `
-        <div style="width: 250px;">
-          <img src="${media.media_url}" style="width: 100%; height: auto; max-height: 250px; object-fit: contain; border-radius: 8px;"/>
-          <div style="padding: 12px;">
-            <div style="display: flex; gap: 4px; margin-bottom: 12px;">
-              <input type="text" class="location-input" data-id="${media.id}" value="${resolvedLocationName}" style="flex: 1; padding: 6px; background-color: white; color: black; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;" />
-              <button class="save-location-btn" data-id="${media.id}" style="padding: 6px 10px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 13px;">💾</button>
-            </div>
-            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-              <button class="nav-prev-btn" data-id="${media.id}" style="flex: 1; padding: 8px; background-color: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px;">⬅️ Anterior</button>
-              <button class="nav-next-btn" data-id="${media.id}" style="flex: 1; padding: 8px; background-color: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px;">Siguiente ➡️</button>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="delete-media-btn" data-id="${media.id}" data-url="${media.media_url}" data-type="${media.media_type}" style="flex: 1; padding: 8px; background-color: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px;">🗑️ Borrar</button>
-            </div>
+          <div class="map-photo-popup__actions">
+            <button type="button" class="nav-prev-btn map-photo-popup__button" data-id="${id}">Anterior</button>
+            <button type="button" class="nav-next-btn map-photo-popup__button" data-id="${id}">Siguiente</button>
           </div>
+          <button type="button" class="delete-media-btn map-photo-popup__button map-photo-popup__button--danger" data-id="${id}" data-url="${mediaUrl}" data-type="${media.media_type}">Borrar contenido</button>
         </div>
-      `;
-    }
-    
-    const mediaIcon = this.L.divIcon({
+      </article>`;
+    const icon = this.L.divIcon({
       className: 'custom-media-marker',
       html: markerHTML,
       iconSize: [50, 50],
       iconAnchor: [25, 25],
       popupAnchor: [0, -25]
     });
-
-    const marker = this.L.marker([media.lat, media.lng], { icon: mediaIcon })
+    const marker = this.L.marker([media.lat, media.lng], { icon })
       .addTo(this.map)
-      .bindPopup(popupHTML);
+      .bindPopup(popupHTML, { maxWidth: 320 });
     this.mediaMarkers.set(String(media.id), marker);
   }
 
+  private escapeHtml(value: string): string {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    };
+    return value.replace(/[&<>"']/g, (character) => entities[character] || character);
+  }
   private async saveMedia(media: any): Promise<string | null> {
     // Remover created_at para que Supabase lo genere automáticamente
     const { created_at, ...mediaWithoutTimestamp } = media;
@@ -652,7 +593,6 @@ export class Mapa implements AfterViewInit, OnDestroy {
       if (error) throw error;
       this.albums.update((albums) => [...albums, data as Album]);
       this.albumName.set('');
-      this.showNotificationMessage('Álbum creado correctamente', 'success');
     } catch (error) {
       console.error('Error creando álbum:', error);
       this.albumError.set('No se pudo crear el álbum. Revisa la conexión e inténtalo de nuevo.');

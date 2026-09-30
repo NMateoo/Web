@@ -3,6 +3,12 @@ import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, N
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '../../services/supabase.service';
 
+interface Album {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
 @Component({
   selector: 'app-mapa',
   imports: [CommonModule],
@@ -26,7 +32,6 @@ export class Mapa implements AfterViewInit, OnDestroy {
   protected selectedCoords = signal<[number, number] | null>(null);
   protected selectedLocation = signal<string>('Ubicación desconocida');
   private mapMediaItems = signal<any[]>([]);
-  private readonly locationDetailsCache = new Map<string, { location: string; country: string; countryCode: string }>();
   private readonly mediaMarkers = new Map<string, any>();
   private deleteListener?: (event: MouseEvent) => void;
   private supabase: SupabaseClient;
@@ -36,6 +41,14 @@ export class Mapa implements AfterViewInit, OnDestroy {
   isUploading = signal(false);
   uploadError = signal<string | null>(null);
   isDeleting = signal(false);
+  albums = signal<Album[]>([]);
+  showAlbumsModal = signal(false);
+  activeAlbumId = signal<string | null>(null);
+  selectedAlbumId = signal<string | null>(null);
+  albumName = signal('');
+  isCreatingAlbum = signal(false);
+  albumError = signal<string | null>(null);
+  currentAlbumIndex = signal(0);
 
   // Notificaciones
   notification = signal<string>('');
@@ -48,16 +61,6 @@ export class Mapa implements AfterViewInit, OnDestroy {
   confirmMessage = signal<string>('');
   private confirmCallback: (() => void) | null = null;
 
-  // Mapa coroplético - Nuevos signals
-  private countriesData = signal<Map<string, any>>(new Map());
-  selectedCountry = signal<string | null>(null);
-  private selectedCountryCode = signal<string | null>(null);
-  showCountryGallery = signal(false);
-  currentCountryIndex = signal(0);
-  private countriesGeoJSON: any = null;
-  private isSelectingCountry = false; // Flag para evitar propagación de eventos
-  private countriesLayer: any = null; // Referencia a la capa GeoJSON
-
   isBrowser = false;
 
   constructor() {
@@ -66,37 +69,34 @@ export class Mapa implements AfterViewInit, OnDestroy {
     this.supabase = this.supabaseService.getClient();
   }
 
-  // Computed para las fotos del país seleccionado
-  protected countryPhotos = computed(() => {
-    const countryCode = this.selectedCountryCode();
-    if (!countryCode) return [];
-    const countryData = this.countriesData().get(countryCode);
-    return countryData?.photos || [];
+  protected albumsWithCounts = computed(() => {
+    const media = this.mapMediaItems();
+    return [
+      { id: '__unassigned__', name: 'Sin álbum', count: media.filter((item) => !item.album_id).length },
+      ...this.albums().map((album) => ({
+        ...album,
+        count: media.filter((item) => item.album_id === album.id).length
+      }))
+    ];
   });
 
-  private normalizeCountryName(name: string): string {
-    return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
-  }
+  protected albumPhotos = computed(() => {
+    const albumId = this.activeAlbumId();
+    if (!albumId) return [];
+    return this.mapMediaItems().filter((item) =>
+      albumId === '__unassigned__' ? !item.album_id : item.album_id === albumId
+    );
+  });
 
-  private getCountryDataForFeature(feature: any): any {
-    const properties = feature.properties;
-    const countries = this.countriesData();
-    const countryCode = String(properties.ISO_A2 || '').toUpperCase();
-    if (countries.has(countryCode)) return countries.get(countryCode);
-
-    for (const name of [properties.NAME_ES, properties.ADMIN, properties.NAME]) {
-      if (typeof name !== 'string') continue;
-      const countryData = countries.get(this.normalizeCountryName(name));
-      if (countryData) return countryData;
-    }
-    return undefined;
-  }
+  protected activeAlbum = computed(() =>
+    this.albums().find((album) => album.id === this.activeAlbumId()) ?? null
+  );
 
   async ngAfterViewInit(): Promise<void> {
     if (isPlatformBrowser(this.platformId)) {
       await this.loadLeaflet();
       this.setupDeleteListener();
-      await this.loadSavedPhotos();
+      await Promise.all([this.loadSavedPhotos(), this.loadAlbums()]);
     }
   }
 
@@ -176,24 +176,15 @@ export class Mapa implements AfterViewInit, OnDestroy {
       maxZoom: 19,
     }).addTo(this.map);
 
-    // Cargar capa de países (coroplético)
-    this.loadCountriesGeoJSON();
-
     // CLICK EN MAPA - Abre el modal para agregar foto
     this.map.on('click', async (e: any) => {
-      // Si se seleccionó un país, no abrir modal
-      if (this.isSelectingCountry) {
-        this.isSelectingCountry = false;
-        return;
-      }
-
       this.ngZone.run(async () => {
         const coords: [number, number] = [e.latlng.lat, e.latlng.lng];
         this.selectedCoords.set(coords);
         
         // Obtener el nombre del lugar
-        const details = await this.getLocationDetails(coords[0], coords[1]);
-        this.selectedLocation.set(details.location);
+        const locationName = await this.getLocationName(coords[0], coords[1]);
+        this.selectedLocation.set(locationName);
         
         this.showUploadModal.set(true);
         this.uploadError.set(null);
@@ -203,11 +194,8 @@ export class Mapa implements AfterViewInit, OnDestroy {
 
     this.map.invalidateSize();
   }
-  private async getLocationDetails(lat: number, lng: number): Promise<{ location: string; country: string; countryCode: string }> {
-    const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
-    const cached = this.locationDetailsCache.get(key);
-    if (cached) return cached;
-    const fallback = { location: `${lat.toFixed(4)}, ${lng.toFixed(4)}`, country: 'Unknown', countryCode: '' };
+  private async getLocationName(lat: number, lng: number): Promise<string> {
+    const fallback = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
@@ -227,13 +215,7 @@ export class Mapa implements AfterViewInit, OnDestroy {
         address?.state || 
         `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
       
-      const details = {
-        location,
-        country: address?.country || 'Unknown',
-        countryCode: String(address?.country_code || '').toUpperCase()
-      };
-      this.locationDetailsCache.set(key, details);
-      return details;
+      return location;
     } catch (error) {
       console.error('Error obteniendo nombre de ubicación:', error);
       return fallback;
@@ -294,28 +276,16 @@ export class Mapa implements AfterViewInit, OnDestroy {
         media_url: publicUrl,
         media_type: fileType,
         created_at: new Date().toISOString(),
-        location_name: null
+        location_name: null,
+        album_id: this.selectedAlbumId()
       };
 
       const insertedId = await this.saveMedia(mediaData);
       mediaData.id = insertedId; // Asignar el id generado por la BD
-      const details = await this.getLocationDetails(mediaData.lat, mediaData.lng);
-      mediaData.country = details.country;
-      const countryCode = details.countryCode || this.normalizeCountryName(details.country);
-      mediaData.countryCode = countryCode;
-      await this.addMediaMarker(mediaData, details.location);
+      await this.addMediaMarker(mediaData);
       
       // Agregar el nuevo media a la lista de medios del mapa
       this.mapMediaItems.update(items => [...items, mediaData]);
-      const updatedCountries = new Map(this.countriesData());
-      const countryData = updatedCountries.get(countryCode) || { photos: [], count: 0, name: details.country, code: countryCode };
-      const photos = [...countryData.photos, mediaData];
-      const updatedCountryData = { ...countryData, photos, count: photos.length };
-      updatedCountries.set(countryCode, updatedCountryData);
-      updatedCountries.set(this.normalizeCountryName(details.country), updatedCountryData);
-      this.countriesData.set(updatedCountries);
-      this.updateCountryLayer();
-
       // Limpiar modal
       this.closeModal();
       this.isUploading.set(false);
@@ -332,6 +302,7 @@ export class Mapa implements AfterViewInit, OnDestroy {
     this.selectedFile.set(null);
     this.uploadError.set(null);
     this.selectedCoords.set(null);
+    this.selectedAlbumId.set(null);
   }
 
   private async addMediaMarker(media: any, locationName?: string): Promise<void> {
@@ -481,14 +452,9 @@ export class Mapa implements AfterViewInit, OnDestroy {
     
     this.initMap(centerCoords);
 
-    // Agrupar fotos por país
-    const countriesMap = new Map<string, any[]>();
     const mediaItems: any[] = [];
 
     for (const item of media || []) {
-      const details = await this.getLocationDetails(item.lat, item.lng);
-      const countryCode = details.countryCode || this.normalizeCountryName(details.country);
-      
       // Mantener compatibilidad con datos antiguos
       const mediaItem = {
         id: item.id,
@@ -498,41 +464,20 @@ export class Mapa implements AfterViewInit, OnDestroy {
         media_type: item.media_type || 'image',
         created_at: item.created_at,
         location_name: item.location_name || null,
-        country: details.country,
-        countryCode
+        album_id: item.album_id || null
       };
 
       mediaItems.push(mediaItem);
 
-      // Agrupar por país
-      if (!countriesMap.has(countryCode)) {
-        countriesMap.set(countryCode, []);
-      }
-      countriesMap.get(countryCode)!.push(mediaItem);
-
       // Agregar marcador en el mapa
-      await this.addMediaMarker(mediaItem, details.location);
+      await this.addMediaMarker(mediaItem);
     }
 
-    // Guardar datos de países en el signal
-    const countriesData = new Map<string, any>();
-    countriesMap.forEach((photos, countryCode) => {
-      const countryData = {
-        photos: photos,
-        count: photos.length,
-        name: photos[0]?.country || 'Unknown',
-        code: countryCode
-      };
-      countriesData.set(countryCode, countryData);
-      countriesData.set(this.normalizeCountryName(countryData.name), countryData);
-    });
-    this.countriesData.set(countriesData);
 
     // Guardar medios para navegación
     this.mapMediaItems.set(mediaItems);
 
     // Actualizar colores del mapa después de agrupar
-    this.updateCountryLayer();
   }
 
   private navigateMedia(currentId: string, direction: number): void {
@@ -623,20 +568,8 @@ export class Mapa implements AfterViewInit, OnDestroy {
         const marker = this.mediaMarkers.get(String(id));
         if (marker) this.map.removeLayer(marker);
         this.mediaMarkers.delete(String(id));
-        const deletedMedia = this.mapMediaItems().find((item) => String(item.id) === String(id));
         this.mapMediaItems.update((items) => items.filter((item) => String(item.id) !== String(id)));
 
-        if (deletedMedia?.countryCode) {
-          const updatedCountries = new Map(this.countriesData());
-          const countryData = updatedCountries.get(deletedMedia.countryCode);
-          if (countryData) {
-            const photos = countryData.photos.filter((photo: any) => String(photo.id) !== String(id));
-            updatedCountries.set(deletedMedia.countryCode, { ...countryData, photos, count: photos.length });
-            this.countriesData.set(updatedCountries);
-          }
-        }
-
-        this.updateCountryLayer();
         this.showConfirmDialog.set(false);
         this.isDeleting.set(false);
         this.showNotificationMessage('Contenido eliminado correctamente', 'success');
@@ -650,117 +583,94 @@ export class Mapa implements AfterViewInit, OnDestroy {
     this.showConfirmDialog.set(true);
   }
 
-  // ============== MÉTODOS PARA MAPA COROPLÉTICO ==============
 
-  private async loadCountriesGeoJSON(): Promise<void> {
+  private async loadAlbums(): Promise<void> {
+    const { data, error } = await this.supabase
+      .from('albums')
+      .select('id, name, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error cargando álbumes:', error);
+      this.showNotificationMessage('No se pudieron cargar los álbumes', 'error');
+      return;
+    }
+    this.albums.set(data || []);
+  }
+
+  protected openAlbums(): void {
+    this.activeAlbumId.set(null);
+    this.albumError.set(null);
+    this.showAlbumsModal.set(true);
+  }
+
+  protected closeAlbums(): void {
+    this.showAlbumsModal.set(false);
+    this.activeAlbumId.set(null);
+    this.currentAlbumIndex.set(0);
+  }
+
+  protected openAlbum(albumId: string): void {
+    this.activeAlbumId.set(albumId);
+    this.currentAlbumIndex.set(0);
+  }
+
+  protected backToAlbums(): void {
+    this.activeAlbumId.set(null);
+    this.currentAlbumIndex.set(0);
+  }
+
+  protected onAlbumSelectionChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.selectedAlbumId.set(value || null);
+  }
+
+  protected onAlbumNameChange(event: Event): void {
+    this.albumName.set((event.target as HTMLInputElement).value);
+  }
+
+  protected async createAlbum(): Promise<void> {
+    const name = this.albumName().trim();
+    if (!name) {
+      this.albumError.set('Escribe un nombre para el álbum.');
+      return;
+    }
+    if (this.albums().some((album) => album.name.toLowerCase() === name.toLowerCase())) {
+      this.albumError.set('Ya existe un álbum con ese nombre.');
+      return;
+    }
+
+    this.isCreatingAlbum.set(true);
+    this.albumError.set(null);
     try {
-      const response = await fetch(
-        'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson'
-      );
-      if (!response.ok) throw new Error(`GeoJSON request failed: ${response.status}`);
-      this.countriesGeoJSON = await response.json();
-      this.updateCountryLayer();
+      const { data, error } = await this.supabase
+        .from('albums')
+        .insert({ name })
+        .select('id, name, created_at')
+        .single();
+
+      if (error) throw error;
+      this.albums.update((albums) => [...albums, data as Album]);
+      this.albumName.set('');
+      this.showNotificationMessage('Álbum creado correctamente', 'success');
     } catch (error) {
-      console.error('Error cargando GeoJSON de países:', error);
+      console.error('Error creando álbum:', error);
+      this.albumError.set('No se pudo crear el álbum. Revisa la conexión e inténtalo de nuevo.');
+    } finally {
+      this.isCreatingAlbum.set(false);
     }
   }
 
-  private updateCountryLayer(): void {
-    if (!this.countriesGeoJSON || !this.map) return;
+  protected nextAlbumPhoto(): void {
+    const photos = this.albumPhotos();
+    if (photos.length > 0) this.currentAlbumIndex.update((index) => (index + 1) % photos.length);
+  }
 
-    // Remover capa anterior si existe
-    if (this.countriesLayer) {
-      this.map.removeLayer(this.countriesLayer);
+  protected prevAlbumPhoto(): void {
+    const photos = this.albumPhotos();
+    if (photos.length > 0) {
+      this.currentAlbumIndex.update((index) => (index - 1 + photos.length) % photos.length);
     }
-
-    const geoJsonLayer = this.L.geoJSON(this.countriesGeoJSON, {
-      style: (feature: any) => {
-        return {
-          fill: false,
-          weight: 3,
-          opacity: 1,
-          color: '#334155'
-        };
-      },
-      onEachFeature: (feature: any, layer: any) => {
-        const countryName = feature.properties.NAME;
-        const countryCode = String(feature.properties.ISO_A2 || '').toUpperCase();
-        const countryData = this.getCountryDataForFeature(feature);
-        const photoCount = countryData?.photos?.length || 0;
-
-        // Popup con información
-        const popupText = `<div style="font-size: 12px;">
-          <strong>${countryName}</strong><br/>
-          📸 Fotos: ${photoCount}
-        </div>`;
-
-        layer.bindPopup(popupText);
-
-        // Click en país - Usar L.DomEvent.stop para detener completamente
-        layer.on('click', (e: any) => {
-          this.L.DomEvent.stop(e);
-          this.isSelectingCountry = true;
-          
-          this.ngZone.run(() => {
-            const galleryCountryCode = countryCode || countryData?.code || this.normalizeCountryName(countryName);
-            this.selectCountry(countryName, galleryCountryCode);
-          });
-        });
-
-        // Efectos visuales al pasar mouse
-        layer.on('mouseover', () => {
-          layer.setStyle({
-            weight: 3.5,
-            opacity: 1
-          });
-          layer.bringToFront();
-        });
-
-        layer.on('mouseout', () => {
-          layer.setStyle({
-            weight: 3,
-            opacity: 1
-          });
-        });
-      }
-    }).addTo(this.map);
-
-    // Guardar referencia a la capa
-    this.countriesLayer = geoJsonLayer;
-  }
-
-  private selectCountry(countryName: string, countryCode: string): void {
-    this.selectedCountry.set(countryName);
-    this.selectedCountryCode.set(countryCode);
-    this.showCountryGallery.set(true);
-    this.currentCountryIndex.set(0);
-    this.cdr.detectChanges();
-    // El flag se reseteará en el siguiente click del mapa
-  }
-
-  protected closeCountryGallery(): void {
-    this.showCountryGallery.set(false);
-    this.selectedCountry.set(null);
-    this.selectedCountryCode.set(null);
-    this.currentCountryIndex.set(0);
-  }
-
-  protected nextCountryPhoto(): void {
-    const photos = this.countryPhotos();
-    if (photos.length === 0) return;
-
-    let index = this.currentCountryIndex() + 1;
-    if (index >= photos.length) index = 0;
-    this.currentCountryIndex.set(index);
-  }
-
-  protected prevCountryPhoto(): void {
-    const photos = this.countryPhotos();
-    if (photos.length === 0) return;
-
-    let index = this.currentCountryIndex() - 1;
-    if (index < 0) index = photos.length - 1;
-    this.currentCountryIndex.set(index);
   }
 
   private fixLeafletIconPath(): void {

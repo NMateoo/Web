@@ -74,6 +74,24 @@ export class Mapa implements AfterViewInit, OnDestroy {
     return countryData?.photos || [];
   });
 
+  private normalizeCountryName(name: string): string {
+    return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+  }
+
+  private getCountryDataForFeature(feature: any): any {
+    const properties = feature.properties;
+    const countries = this.countriesData();
+    const countryCode = String(properties.ISO_A2 || '').toUpperCase();
+    if (countries.has(countryCode)) return countries.get(countryCode);
+
+    for (const name of [properties.NAME_ES, properties.ADMIN, properties.NAME]) {
+      if (typeof name !== 'string') continue;
+      const countryData = countries.get(this.normalizeCountryName(name));
+      if (countryData) return countryData;
+    }
+    return undefined;
+  }
+
   async ngAfterViewInit(): Promise<void> {
     if (isPlatformBrowser(this.platformId)) {
       await this.loadLeaflet();
@@ -283,15 +301,18 @@ export class Mapa implements AfterViewInit, OnDestroy {
       mediaData.id = insertedId; // Asignar el id generado por la BD
       const details = await this.getLocationDetails(mediaData.lat, mediaData.lng);
       mediaData.country = details.country;
-      mediaData.countryCode = details.countryCode;
+      const countryCode = details.countryCode || this.normalizeCountryName(details.country);
+      mediaData.countryCode = countryCode;
       await this.addMediaMarker(mediaData, details.location);
       
       // Agregar el nuevo media a la lista de medios del mapa
       this.mapMediaItems.update(items => [...items, mediaData]);
       const updatedCountries = new Map(this.countriesData());
-      const countryData = updatedCountries.get(details.countryCode) || { photos: [], count: 0, name: details.country };
+      const countryData = updatedCountries.get(countryCode) || { photos: [], count: 0, name: details.country, code: countryCode };
       const photos = [...countryData.photos, mediaData];
-      updatedCountries.set(details.countryCode, { ...countryData, photos, count: photos.length });
+      const updatedCountryData = { ...countryData, photos, count: photos.length };
+      updatedCountries.set(countryCode, updatedCountryData);
+      updatedCountries.set(this.normalizeCountryName(details.country), updatedCountryData);
       this.countriesData.set(updatedCountries);
       this.updateCountryLayer();
 
@@ -466,7 +487,7 @@ export class Mapa implements AfterViewInit, OnDestroy {
 
     for (const item of media || []) {
       const details = await this.getLocationDetails(item.lat, item.lng);
-      const countryCode = details.countryCode;
+      const countryCode = details.countryCode || this.normalizeCountryName(details.country);
       
       // Mantener compatibilidad con datos antiguos
       const mediaItem = {
@@ -496,11 +517,14 @@ export class Mapa implements AfterViewInit, OnDestroy {
     // Guardar datos de países en el signal
     const countriesData = new Map<string, any>();
     countriesMap.forEach((photos, countryCode) => {
-      countriesData.set(countryCode, {
+      const countryData = {
         photos: photos,
         count: photos.length,
-        name: photos[0]?.country || 'Unknown'
-      });
+        name: photos[0]?.country || 'Unknown',
+        code: countryCode
+      };
+      countriesData.set(countryCode, countryData);
+      countriesData.set(this.normalizeCountryName(countryData.name), countryData);
     });
     this.countriesData.set(countriesData);
 
@@ -651,23 +675,17 @@ export class Mapa implements AfterViewInit, OnDestroy {
 
     const geoJsonLayer = this.L.geoJSON(this.countriesGeoJSON, {
       style: (feature: any) => {
-        const countryCode = String(feature.properties.ISO_A2 || '').toUpperCase();
-        const countryData = this.countriesData().get(countryCode);
-        const photoCount = countryData?.photos?.length || 0;
-        const color = this.getCountryColor(photoCount);
-
         return {
-          fillColor: color,
-          weight: 2.5,
-          opacity: 0.95,
-          color: '#334155',
-          fillOpacity: 0.35
+          fill: false,
+          weight: 3,
+          opacity: 1,
+          color: '#334155'
         };
       },
       onEachFeature: (feature: any, layer: any) => {
         const countryName = feature.properties.NAME;
         const countryCode = String(feature.properties.ISO_A2 || '').toUpperCase();
-        const countryData = this.countriesData().get(countryCode);
+        const countryData = this.getCountryDataForFeature(feature);
         const photoCount = countryData?.photos?.length || 0;
 
         // Popup con información
@@ -684,7 +702,8 @@ export class Mapa implements AfterViewInit, OnDestroy {
           this.isSelectingCountry = true;
           
           this.ngZone.run(() => {
-            this.selectCountry(countryName, countryCode);
+            const galleryCountryCode = countryCode || countryData?.code || this.normalizeCountryName(countryName);
+            this.selectCountry(countryName, galleryCountryCode);
           });
         });
 
@@ -692,15 +711,15 @@ export class Mapa implements AfterViewInit, OnDestroy {
         layer.on('mouseover', () => {
           layer.setStyle({
             weight: 3.5,
-            fillOpacity: 0.5
+            opacity: 1
           });
           layer.bringToFront();
         });
 
         layer.on('mouseout', () => {
           layer.setStyle({
-            weight: 2.5,
-            fillOpacity: 0.35
+            weight: 3,
+            opacity: 1
           });
         });
       }
@@ -708,14 +727,6 @@ export class Mapa implements AfterViewInit, OnDestroy {
 
     // Guardar referencia a la capa
     this.countriesLayer = geoJsonLayer;
-  }
-
-  private getCountryColor(photoCount: number): string {
-    if (photoCount === 0) return '#fce7f3';
-    if (photoCount <= 5) return '#f9a8d4';
-    if (photoCount <= 15) return '#ec4899';
-    if (photoCount <= 30) return '#be185d';
-    return '#831843';
   }
 
   private selectCountry(countryName: string, countryCode: string): void {

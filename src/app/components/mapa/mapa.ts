@@ -95,11 +95,13 @@ export class Mapa implements AfterViewInit, OnDestroy {
       const saveBtn = target.closest('.save-location-btn');
       if (saveBtn) {
         const id = saveBtn.getAttribute('data-id');
-        const input = document.querySelector(`.location-input[data-id="${id}"]`) as HTMLInputElement;
-        if (input) {
-          const newLocation = input.value;
-          if (newLocation.trim()) {
-            this.updateLocationName(id, newLocation);
+        if (id) {
+          const input = document.querySelector(`.location-input[data-id="${id}"]`) as HTMLInputElement | null;
+          if (input) {
+            const newLocation = input.value;
+            if (newLocation.trim()) {
+              this.updateLocationName(id, newLocation);
+            }
           }
         }
         return;
@@ -111,13 +113,13 @@ export class Mapa implements AfterViewInit, OnDestroy {
       
       if (nextBtn) {
         const currentId = nextBtn.getAttribute('data-id');
-        this.navigateMedia(currentId, 1);
+        if (currentId) this.navigateMedia(currentId, 1);
         return;
       }
       
       if (prevBtn) {
         const currentId = prevBtn.getAttribute('data-id');
-        this.navigateMedia(currentId, -1);
+        if (currentId) this.navigateMedia(currentId, -1);
         return;
       }
 
@@ -129,9 +131,9 @@ export class Mapa implements AfterViewInit, OnDestroy {
       const url = button.getAttribute('data-url');
       const type = button.getAttribute('data-type');
 
-      if (!id) {
+      if (!id || !url || !type) {
         console.error('El ID proporcionado es inválido:', id);
-        alert('No se puede eliminar: ID inválido.');
+        alert('No se puede eliminar: faltan datos del contenido.');
         return;
       }
       this.deleteMedia(id, url, type);

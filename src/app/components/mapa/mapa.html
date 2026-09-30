@@ -207,6 +207,178 @@
   </div>
 }
 
+<!-- Modal de Galería por País (Nuevo) -->
+@if (showCountryGallery()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9998]">
+    <div class="bg-white/20 backdrop-blur-lg rounded-2xl shadow-2xl max-w-2xl w-full p-8 border border-white/30 flex flex-col gap-6">
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-3xl font-bold text-white mb-2">🌍 {{ selectedCountry() }}</h2>
+          <p class="text-white/80 text-sm">{{ countryPhotos().length }} fotos en este país</p>
+        </div>
+        <button
+          (click)="closeCountryGallery()"
+          style="
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 28px;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Galería de Fotos -->
+      @if (countryPhotos().length > 0) {
+        <div
+          style="
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #1f2937;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          @if (countryPhotos()[currentCountryIndex()].media_type === 'video') {
+            <video
+              [src]="countryPhotos()[currentCountryIndex()].media_url"
+              controls
+              style="width: 100%; height: 100%; object-fit: contain;"
+            ></video>
+          } @else {
+            <img
+              [src]="countryPhotos()[currentCountryIndex()].media_url"
+              alt="Foto del país"
+              style="width: 100%; height: 100%; object-fit: contain;"
+            />
+          }
+        </div>
+
+        <!-- Info de Foto Actual -->
+        <div class="bg-white/10 border border-white/20 rounded-lg p-4 backdrop-blur-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-white/80">
+              Foto {{ currentCountryIndex() + 1 }} de {{ countryPhotos().length }}
+            </span>
+            <span class="text-xs bg-white/20 px-2 py-1 rounded text-white/70">
+              {{ countryPhotos()[currentCountryIndex()].media_type === 'video' ? '🎬 Video' : '📸 Imagen' }}
+            </span>
+          </div>
+          @if (countryPhotos()[currentCountryIndex()].location_name) {
+            <p class="text-sm text-white">
+              📍 {{ countryPhotos()[currentCountryIndex()].location_name }}
+            </p>
+          }
+        </div>
+
+        <!-- Controles de Navegación -->
+        <div class="flex gap-3">
+          <button
+            (click)="prevCountryPhoto()"
+            style="
+              flex: 1;
+              padding: 12px;
+              background-color: rgba(59, 130, 246, 0.3);
+              border: 1px solid rgba(59, 130, 246, 0.5);
+              color: white;
+              font-weight: 600;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: all 0.2s;
+            "
+            onmouseover="this.style.backgroundColor='rgba(59, 130, 246, 0.5)'"
+            onmouseout="this.style.backgroundColor='rgba(59, 130, 246, 0.3)'"
+          >
+            ⬅️ Anterior
+          </button>
+          <button
+            (click)="nextCountryPhoto()"
+            style="
+              flex: 1;
+              padding: 12px;
+              background-color: rgba(59, 130, 246, 0.3);
+              border: 1px solid rgba(59, 130, 246, 0.5);
+              color: white;
+              font-weight: 600;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: all 0.2s;
+            "
+            onmouseover="this.style.backgroundColor='rgba(59, 130, 246, 0.5)'"
+            onmouseout="this.style.backgroundColor='rgba(59, 130, 246, 0.3)'"
+          >
+            Siguiente ➡️
+          </button>
+        </div>
+
+        <!-- Miniaturas de otras fotos -->
+        @if (countryPhotos().length > 1) {
+          <div style="display: flex; gap: 8px; overflow-x: auto; padding: 8px 0;">
+            @for (photo of countryPhotos(); track photo.id; let i = $index) {
+              <button
+                (click)="currentCountryIndex.set(i)"
+                [style]="
+                  i === currentCountryIndex()
+                    ? 'flex-shrink: 0; width: 60px; height: 60px; border-radius: 8px; overflow: hidden; border: 3px solid #3b82f6; cursor: pointer; transition: all 0.2s;'
+                    : 'flex-shrink: 0; width: 60px; height: 60px; border-radius: 8px; overflow: hidden; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.2s;'
+                "
+              >
+                @if (photo.media_type === 'video') {
+                  <div style="width: 100%; height: 100%; background-color: #1f2937; display: flex; align-items: center; justify-content: center; color: white;">
+                    🎬
+                  </div>
+                } @else {
+                  <img
+                    [src]="photo.media_url"
+                    alt="Miniatura"
+                    style="width: 100%; height: 100%; object-fit: cover;"
+                  />
+                }
+              </button>
+            }
+          </div>
+        }
+      } @else {
+        <div style="text-align: center; padding: 32px;">
+          <p class="text-white/70 text-lg">No hay fotos en este país</p>
+        </div>
+      }
+
+      <!-- Botón Cerrar -->
+      <button
+        (click)="closeCountryGallery()"
+        style="
+          width: 100%;
+          padding: 12px;
+          background-color: rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          font-weight: 600;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+        "
+        onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.3)'"
+        onmouseout="this.style.backgroundColor='rgba(255, 255, 255, 0.2)'"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+}
+
 <style>
   @keyframes spin {
     from { transform: rotate(0deg); }

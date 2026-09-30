@@ -49,6 +49,15 @@ export class Mapa implements OnInit, AfterViewInit {
   confirmMessage = signal<string>('');
   private confirmCallback: (() => void) | null = null;
 
+  // Mapa coroplético - Nuevos signals
+  private countriesData = signal<Map<string, any>>(new Map());
+  selectedCountry = signal<string | null>(null);
+  showCountryGallery = signal(false);
+  currentCountryIndex = signal(0);
+  private countriesGeoJSON: any = null;
+  private isSelectingCountry = false; // Flag para evitar propagación de eventos
+  private countriesLayer: any = null; // Referencia a la capa GeoJSON
+
   isBrowser = false;
 
   constructor() {
@@ -56,6 +65,14 @@ export class Mapa implements OnInit, AfterViewInit {
     // Obtener el cliente de Supabase desde el servicio
     this.supabase = this.supabaseService.getClient();
   }
+
+  // Computed para las fotos del país seleccionado
+  protected countryPhotos = computed(() => {
+    const country = this.selectedCountry();
+    if (!country) return [];
+    const countryData = this.countriesData().get(country);
+    return countryData?.photos || [];
+  });
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
@@ -138,8 +155,17 @@ export class Mapa implements OnInit, AfterViewInit {
       maxZoom: 19,
     }).addTo(this.map);
 
-    // CLICK EN MAPA - Abre el modal
+    // Cargar capa de países (coroplético)
+    this.loadCountriesGeoJSON();
+
+    // CLICK EN MAPA - Abre el modal para agregar foto
     this.map.on('click', async (e: any) => {
+      // Si se seleccionó un país, no abrir modal
+      if (this.isSelectingCountry) {
+        this.isSelectingCountry = false;
+        return;
+      }
+
       this.ngZone.run(async () => {
         const coords: [number, number] = [e.latlng.lat, e.latlng.lng];
         this.selectedCoords.set(coords);
@@ -416,9 +442,14 @@ export class Mapa implements OnInit, AfterViewInit {
     
     this.initMap(centerCoords);
 
-    // Almacenar los medios para la navegación
+    // Agrupar fotos por país
+    const countriesMap = new Map<string, any[]>();
     const mediaItems: any[] = [];
+
     for (const item of media || []) {
+      // Obtener país de las coordenadas
+      const country = await this.getCountryFromCoords(item.lat, item.lng);
+      
       // Mantener compatibilidad con datos antiguos
       const mediaItem = {
         id: item.id,
@@ -427,12 +458,37 @@ export class Mapa implements OnInit, AfterViewInit {
         media_url: item.media_url || item.image_url,
         media_type: item.media_type || 'image',
         created_at: item.created_at,
-        location_name: item.location_name || null
+        location_name: item.location_name || null,
+        country: country
       };
+
       mediaItems.push(mediaItem);
+
+      // Agrupar por país
+      if (!countriesMap.has(country)) {
+        countriesMap.set(country, []);
+      }
+      countriesMap.get(country)!.push(mediaItem);
+
+      // Agregar marcador en el mapa
       await this.addMediaMarker(mediaItem);
     }
+
+    // Guardar datos de países en el signal
+    const countriesData = new Map<string, any>();
+    countriesMap.forEach((photos, country) => {
+      countriesData.set(country, {
+        photos: photos,
+        count: photos.length
+      });
+    });
+    this.countriesData.set(countriesData);
+
+    // Guardar medios para navegación
     this.mapMediaItems.set(mediaItems);
+
+    // Actualizar colores del mapa después de agrupar
+    this.updateCountryLayer();
   }
 
   private navigateMedia(currentId: string, direction: number): void {
@@ -545,6 +601,147 @@ export class Mapa implements OnInit, AfterViewInit {
       }
     };
     this.showConfirmDialog.set(true);
+  }
+
+  // ============== MÉTODOS PARA MAPA COROPLÉTICO ==============
+
+  private async loadCountriesGeoJSON(): Promise<void> {
+    try {
+      const response = await fetch(
+        'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_cultural/ne_10m_admin_0_countries.geojson'
+      );
+      this.countriesGeoJSON = await response.json();
+      this.updateCountryLayer();
+    } catch (error) {
+      console.error('Error cargando GeoJSON de países:', error);
+    }
+  }
+
+  private updateCountryLayer(): void {
+    if (!this.countriesGeoJSON || !this.map) return;
+
+    // Remover capa anterior si existe
+    if (this.countriesLayer) {
+      this.map.removeLayer(this.countriesLayer);
+    }
+
+    const geoJsonLayer = this.L.geoJSON(this.countriesGeoJSON, {
+      style: (feature: any) => {
+        const countryName = feature.properties.NAME;
+        const countryData = this.countriesData().get(countryName);
+        const photoCount = countryData?.photos?.length || 0;
+        const color = this.getCountryColor(photoCount);
+
+        return {
+          fillColor: color,
+          weight: 2,
+          opacity: 0.8,
+          color: '#333',
+          fillOpacity: 0.7
+        };
+      },
+      onEachFeature: (feature: any, layer: any) => {
+        const countryName = feature.properties.NAME;
+        const countryData = this.countriesData().get(countryName);
+        const photoCount = countryData?.photos?.length || 0;
+
+        // Popup con información
+        const popupText = `<div style="font-size: 12px;">
+          <strong>${countryName}</strong><br/>
+          📸 Fotos: ${photoCount}
+        </div>`;
+
+        layer.bindPopup(popupText);
+
+        // Click en país - Usar L.DomEvent.stop para detener completamente
+        layer.on('click', (e: any) => {
+          this.L.DomEvent.stop(e);
+          this.isSelectingCountry = true;
+          
+          this.ngZone.run(() => {
+            this.selectCountry(countryName);
+          });
+        });
+
+        // Efectos visuales al pasar mouse
+        layer.on('mouseover', () => {
+          layer.setStyle({
+            weight: 3,
+            fillOpacity: 0.9
+          });
+          layer.bringToFront();
+        });
+
+        layer.on('mouseout', () => {
+          layer.setStyle({
+            weight: 2,
+            fillOpacity: 0.7
+          });
+        });
+      }
+    }).addTo(this.map);
+
+    // Guardar referencia a la capa
+    this.countriesLayer = geoJsonLayer;
+  }
+
+  private getCountryColor(photoCount: number): string {
+    if (photoCount === 0) return '#d1d5db'; // Gris - sin fotos
+    if (photoCount <= 5) return '#fbbf24'; // Amarillo - pocas fotos
+    if (photoCount <= 15) return '#f97316'; // Naranja - medianas fotos
+    if (photoCount <= 30) return '#ef4444'; // Rojo - muchas fotos
+    return '#dc2626'; // Rojo intenso - muchísimas fotos
+  }
+
+  private async getCountryFromCoords(lat: number, lng: number): Promise<string> {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+      );
+
+      if (!response.ok) return 'Unknown';
+
+      const data = await response.json();
+      const address = data.address;
+
+      // Intentar obtener el país
+      return address?.country || 'Unknown';
+    } catch (error) {
+      console.error('Error obteniendo país:', error);
+      return 'Unknown';
+    }
+  }
+
+  private selectCountry(countryName: string): void {
+    this.selectedCountry.set(countryName);
+    this.showCountryGallery.set(true);
+    this.currentCountryIndex.set(0);
+    this.cdr.detectChanges();
+    // El flag se reseteará en el siguiente click del mapa
+  }
+
+  protected closeCountryGallery(): void {
+    this.showCountryGallery.set(false);
+    this.selectedCountry.set(null);
+    this.currentCountryIndex.set(0);
+  }
+
+  protected nextCountryPhoto(): void {
+    const photos = this.countryPhotos();
+    if (photos.length === 0) return;
+
+    let index = this.currentCountryIndex() + 1;
+    if (index >= photos.length) index = 0;
+    this.currentCountryIndex.set(index);
+  }
+
+  protected prevCountryPhoto(): void {
+    const photos = this.countryPhotos();
+    if (photos.length === 0) return;
+
+    let index = this.currentCountryIndex() - 1;
+    if (index < 0) index = photos.length - 1;
+    this.currentCountryIndex.set(index);
   }
 
   private fixLeafletIconPath(): void {

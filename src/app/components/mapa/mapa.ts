@@ -463,7 +463,6 @@ export class Mapa implements AfterViewInit, OnDestroy {
         return;
       }
 
-      this.showNotificationMessage('Ubicación actualizada correctamente', 'success');
     } catch (error) {
       console.error('Error:', error);
       this.showNotificationMessage('Error al actualizar la ubicación', 'error');
@@ -513,7 +512,6 @@ export class Mapa implements AfterViewInit, OnDestroy {
 
         this.showConfirmDialog.set(false);
         this.isDeleting.set(false);
-        this.showNotificationMessage('Contenido eliminado correctamente', 'success');
 
       } catch (error) {
         console.error('Error al eliminar:', error);

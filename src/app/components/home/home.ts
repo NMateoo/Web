@@ -15,7 +15,6 @@ interface MapPhoto {
 
 @Component({
   selector: 'app-home',
-  standalone: true,
   imports: [CommonModule, NgxParticlesModule],
   templateUrl: './home.html',
   styleUrl: './home.css',
@@ -83,9 +82,7 @@ export class Home implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-    }
+    this.stopSlideshow();
   }
 
   async loadPhotos(): Promise<void> {
@@ -111,10 +108,19 @@ export class Home implements OnInit, OnDestroy {
 
   startSlideshow(): void {
     if (!isPlatformBrowser(this.platformId) || this.photos.length === 0) return;
+    this.stopSlideshow();
+    this.currentIndex = 0;
     this.intervalId = window.setInterval(() => {
       this.currentIndex = (this.currentIndex + 1) % this.photos.length;
       this.currentPhoto.set(this.photos[this.currentIndex]);
     }, 7000);
+  }
+
+  private stopSlideshow(): void {
+    if (this.intervalId !== undefined) {
+      window.clearInterval(this.intervalId);
+      this.intervalId = undefined;
+    }
   }
 
   closeWelcomeModal(): void {

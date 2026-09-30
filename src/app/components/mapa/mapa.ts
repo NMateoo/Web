@@ -1,12 +1,10 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, NgZone, OnInit, PLATFORM_ID, inject } from '@angular/core';
-import { signal, computed } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, NgZone, OnDestroy, PLATFORM_ID, inject, signal, computed } from '@angular/core';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '../../services/supabase.service';
 
 @Component({
   selector: 'app-mapa',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './mapa.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -17,20 +15,21 @@ import { SupabaseService } from '../../services/supabase.service';
   `]
 })
 
-export class Mapa implements OnInit, AfterViewInit {
+export class Mapa implements AfterViewInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
   private supabaseService = inject(SupabaseService);
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
   
   private map: any;
-  private marker: any;
   private L: any;
   protected selectedCoords = signal<[number, number] | null>(null);
   protected selectedLocation = signal<string>('Ubicación desconocida');
   private mapMediaItems = signal<any[]>([]);
+  private readonly locationDetailsCache = new Map<string, { location: string; country: string }>();
+  private readonly mediaMarkers = new Map<string, any>();
+  private deleteListener?: (event: MouseEvent) => void;
   private supabase: SupabaseClient;
-  private uploadedMediaData: Map<string, {fileName: string; bucket: string}> = new Map();
 
   showUploadModal = signal(false);
   selectedFile = signal<File | null>(null);
@@ -42,7 +41,7 @@ export class Mapa implements OnInit, AfterViewInit {
   notification = signal<string>('');
   notificationType = signal<'success' | 'error' | 'pending'>('success');
   showNotification = signal(false);
-  private notificationTimeout: any;
+  private notificationTimeout?: ReturnType<typeof setTimeout>;
 
   // Confirmación
   showConfirmDialog = signal(false);
@@ -74,26 +73,26 @@ export class Mapa implements OnInit, AfterViewInit {
     return countryData?.photos || [];
   });
 
-  ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      console.log('🗺️ Mapa component initialized in browser');
-    }
-  }
-
   async ngAfterViewInit(): Promise<void> {
     if (isPlatformBrowser(this.platformId)) {
       await this.loadLeaflet();
-      setTimeout(() => {
-        this.loadSavedPhotos();
-        this.setupDeleteListener();
-      }, 100);
+      this.setupDeleteListener();
+      await this.loadSavedPhotos();
     }
   }
 
+  ngOnDestroy(): void {
+    if (this.deleteListener) document.removeEventListener('click', this.deleteListener);
+    if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
+    this.map?.remove();
+  }
+
   private setupDeleteListener(): void {
-    document.addEventListener('click', (event: any) => {
+    this.deleteListener = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
       // Botón de guardar ubicación
-      const saveBtn = event.target.closest('.save-location-btn');
+      const saveBtn = target.closest('.save-location-btn');
       if (saveBtn) {
         const id = saveBtn.getAttribute('data-id');
         const input = document.querySelector(`.location-input[data-id="${id}"]`) as HTMLInputElement;
@@ -107,8 +106,8 @@ export class Mapa implements OnInit, AfterViewInit {
       }
 
       // Botones de navegación
-      const nextBtn = event.target.closest('.nav-next-btn');
-      const prevBtn = event.target.closest('.nav-prev-btn');
+      const nextBtn = target.closest('.nav-next-btn');
+      const prevBtn = target.closest('.nav-prev-btn');
       
       if (nextBtn) {
         const currentId = nextBtn.getAttribute('data-id');
@@ -123,7 +122,7 @@ export class Mapa implements OnInit, AfterViewInit {
       }
 
       // Botón de eliminar
-      const button = event.target.closest('.delete-media-btn');
+      const button = target.closest('.delete-media-btn');
       if (!button) return;
 
       const id = button.getAttribute('data-id');
@@ -136,7 +135,8 @@ export class Mapa implements OnInit, AfterViewInit {
         return;
       }
       this.deleteMedia(id, url, type);
-    });
+    };
+    document.addEventListener('click', this.deleteListener);
   }
 
   private async loadLeaflet(): Promise<void> {
@@ -171,8 +171,8 @@ export class Mapa implements OnInit, AfterViewInit {
         this.selectedCoords.set(coords);
         
         // Obtener el nombre del lugar
-        const locationName = await this.getLocationName(coords[0], coords[1]);
-        this.selectedLocation.set(locationName);
+        const details = await this.getLocationDetails(coords[0], coords[1]);
+        this.selectedLocation.set(details.location);
         
         this.showUploadModal.set(true);
         this.uploadError.set(null);
@@ -182,15 +182,17 @@ export class Mapa implements OnInit, AfterViewInit {
 
     this.map.invalidateSize();
   }
-  private async getLocationName(lat: number, lng: number): Promise<string> {
+  private async getLocationDetails(lat: number, lng: number): Promise<{ location: string; country: string }> {
+    const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    const cached = this.locationDetailsCache.get(key);
+    if (cached) return cached;
+    const fallback = { location: `${lat.toFixed(4)}, ${lng.toFixed(4)}`, country: 'Unknown' };
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
       );
       
-      if (!response.ok) {
-        return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-      }
+      if (!response.ok) return fallback;
       
       const data = await response.json();
       
@@ -204,10 +206,12 @@ export class Mapa implements OnInit, AfterViewInit {
         address?.state || 
         `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
       
-      return location;
+      const details = { location, country: address?.country || 'Unknown' };
+      this.locationDetailsCache.set(key, details);
+      return details;
     } catch (error) {
       console.error('Error obteniendo nombre de ubicación:', error);
-      return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      return fallback;
     }
   }
   // � Cuando se selecciona un archivo en el modal
@@ -293,14 +297,11 @@ export class Mapa implements OnInit, AfterViewInit {
     this.selectedCoords.set(null);
   }
 
-  private async addMediaMarker(media: any): Promise<void> {
+  private async addMediaMarker(media: any, locationName?: string): Promise<void> {
     const isVideo = media.media_type === 'video';
     
     // Obtener el nombre del lugar (usar el guardado o hacer reverse geocoding)
-    let locationName = media.location_name;
-    if (!locationName) {
-      locationName = await this.getLocationName(media.lat, media.lng);
-    }
+    const resolvedLocationName = media.location_name || locationName || `${media.lat.toFixed(4)}, ${media.lng.toFixed(4)}`;
     
     // Crear icono personalizado
     let markerHTML: string;
@@ -333,7 +334,7 @@ export class Mapa implements OnInit, AfterViewInit {
           </video>
           <div style="padding: 12px;">
             <div style="display: flex; gap: 4px; margin-bottom: 12px;">
-              <input type="text" class="location-input" data-id="${media.id}" value="${locationName}" style="flex: 1; padding: 6px; background-color: white; color: black; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;" />
+              <input type="text" class="location-input" data-id="${media.id}" value="${resolvedLocationName}" style="flex: 1; padding: 6px; background-color: white; color: black; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;" />
               <button class="save-location-btn" data-id="${media.id}" style="padding: 6px 10px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 13px;">💾</button>
             </div>
             <div style="display: flex; gap: 8px; margin-bottom: 8px;">
@@ -371,7 +372,7 @@ export class Mapa implements OnInit, AfterViewInit {
           <img src="${media.media_url}" style="width: 100%; height: auto; max-height: 250px; object-fit: contain; border-radius: 8px;"/>
           <div style="padding: 12px;">
             <div style="display: flex; gap: 4px; margin-bottom: 12px;">
-              <input type="text" class="location-input" data-id="${media.id}" value="${locationName}" style="flex: 1; padding: 6px; background-color: white; color: black; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;" />
+              <input type="text" class="location-input" data-id="${media.id}" value="${resolvedLocationName}" style="flex: 1; padding: 6px; background-color: white; color: black; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;" />
               <button class="save-location-btn" data-id="${media.id}" style="padding: 6px 10px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 13px;">💾</button>
             </div>
             <div style="display: flex; gap: 8px; margin-bottom: 8px;">
@@ -394,9 +395,10 @@ export class Mapa implements OnInit, AfterViewInit {
       popupAnchor: [0, -25]
     });
 
-    this.L.marker([media.lat, media.lng], { icon: mediaIcon })
+    const marker = this.L.marker([media.lat, media.lng], { icon: mediaIcon })
       .addTo(this.map)
       .bindPopup(popupHTML);
+    this.mediaMarkers.set(String(media.id), marker);
   }
 
   private async saveMedia(media: any): Promise<string | null> {
@@ -447,8 +449,8 @@ export class Mapa implements OnInit, AfterViewInit {
     const mediaItems: any[] = [];
 
     for (const item of media || []) {
-      // Obtener país de las coordenadas
-      const country = await this.getCountryFromCoords(item.lat, item.lng);
+      const details = await this.getLocationDetails(item.lat, item.lng);
+      const country = details.country;
       
       // Mantener compatibilidad con datos antiguos
       const mediaItem = {
@@ -471,7 +473,7 @@ export class Mapa implements OnInit, AfterViewInit {
       countriesMap.get(country)!.push(mediaItem);
 
       // Agregar marcador en el mapa
-      await this.addMediaMarker(mediaItem);
+      await this.addMediaMarker(mediaItem, details.location);
     }
 
     // Guardar datos de países en el signal
@@ -516,20 +518,7 @@ export class Mapa implements OnInit, AfterViewInit {
       this.map.flyTo([nextMedia.lat, nextMedia.lng], 13, { duration: 2 });
       
       // Esperar a que termine la animación y luego abrir el pop-up
-      setTimeout(() => {
-        const layers = this.map._layers;
-        for (const key in layers) {
-          const layer = layers[key];
-          if (layer._latlng && 
-              layer._latlng.lat === nextMedia.lat && 
-              layer._latlng.lng === nextMedia.lng) {
-            if (layer.openPopup) {
-              layer.openPopup();
-            }
-            break;
-          }
-        }
-      }, 2000);
+      this.map.once('moveend', () => this.mediaMarkers.get(String(nextMedia.id))?.openPopup());
     }
   }
 
@@ -553,7 +542,7 @@ export class Mapa implements OnInit, AfterViewInit {
     }
   }
 
-  private async deleteMedia(id: number, mediaUrl: string, mediaType: string): Promise<void> {
+  private async deleteMedia(id: string | number, mediaUrl: string, mediaType: string): Promise<void> {
     this.confirmMessage.set('¿Estás seguro de que deseas borrar esto?');
     this.confirmCallback = async () => {
       try {
@@ -589,10 +578,26 @@ export class Mapa implements OnInit, AfterViewInit {
           return;
         }
 
-        // Recargar el mapa para reflejar los cambios
-        this.ngZone.run(() => {
-          window.location.reload();
-        });
+        const marker = this.mediaMarkers.get(String(id));
+        if (marker) this.map.removeLayer(marker);
+        this.mediaMarkers.delete(String(id));
+        const deletedMedia = this.mapMediaItems().find((item) => String(item.id) === String(id));
+        this.mapMediaItems.update((items) => items.filter((item) => String(item.id) !== String(id)));
+
+        if (deletedMedia?.country) {
+          const updatedCountries = new Map(this.countriesData());
+          const countryData = updatedCountries.get(deletedMedia.country);
+          if (countryData) {
+            const photos = countryData.photos.filter((photo: any) => String(photo.id) !== String(id));
+            updatedCountries.set(deletedMedia.country, { photos, count: photos.length });
+            this.countriesData.set(updatedCountries);
+          }
+        }
+
+        this.updateCountryLayer();
+        this.showConfirmDialog.set(false);
+        this.isDeleting.set(false);
+        this.showNotificationMessage('Contenido eliminado correctamente', 'success');
 
       } catch (error) {
         console.error('Error al eliminar:', error);
@@ -608,8 +613,9 @@ export class Mapa implements OnInit, AfterViewInit {
   private async loadCountriesGeoJSON(): Promise<void> {
     try {
       const response = await fetch(
-        'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/10m_cultural/ne_10m_admin_0_countries.geojson'
+        'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson'
       );
+      if (!response.ok) throw new Error(`GeoJSON request failed: ${response.status}`);
       this.countriesGeoJSON = await response.json();
       this.updateCountryLayer();
     } catch (error) {
@@ -691,25 +697,6 @@ export class Mapa implements OnInit, AfterViewInit {
     if (photoCount <= 15) return '#f97316'; // Naranja - medianas fotos
     if (photoCount <= 30) return '#ef4444'; // Rojo - muchas fotos
     return '#dc2626'; // Rojo intenso - muchísimas fotos
-  }
-
-  private async getCountryFromCoords(lat: number, lng: number): Promise<string> {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-      );
-
-      if (!response.ok) return 'Unknown';
-
-      const data = await response.json();
-      const address = data.address;
-
-      // Intentar obtener el país
-      return address?.country || 'Unknown';
-    } catch (error) {
-      console.error('Error obteniendo país:', error);
-      return 'Unknown';
-    }
   }
 
   private selectCountry(countryName: string): void {

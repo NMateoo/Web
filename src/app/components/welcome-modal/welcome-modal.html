@@ -1,0 +1,25 @@
+@if (isOpen()) {
+  <dialog
+    open
+    class="welcome-modal"
+    aria-labelledby="welcome-modal-title"
+    aria-describedby="welcome-modal-description"
+    aria-modal="true"
+    (keydown)="handleKeydown($event)"
+  >
+    <div class="welcome-modal__backdrop" aria-hidden="true"></div>
+    <section class="welcome-modal__card">
+      <p class="welcome-modal__eyebrow">Una sorpresa para ti</p>
+      <h2 id="welcome-modal-title">Un ramo de violetas</h2>
+      <p id="welcome-modal-description">
+        He preparado algo especial. Ábrelo para descubrirlo.
+      </p>
+      <a class="welcome-modal__link" href="/ramo_violetas_3d_responsive.html" autofocus>
+        Ver mi sorpresa
+      </a>
+      <button class="welcome-modal__close" type="button" (click)="close()">
+        Ahora no
+      </button>
+    </section>
+  </dialog>
+}

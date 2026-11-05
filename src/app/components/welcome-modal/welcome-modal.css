@@ -1,0 +1,115 @@
+.welcome-modal {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  place-items: center;
+  margin: 0;
+  padding: 1.25rem;
+  overflow: auto;
+  border: 0;
+  background: transparent;
+  color: #3b1832;
+  font-family: inherit;
+}
+
+.welcome-modal__backdrop {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  background: rgb(26 10 24 / 65%);
+  backdrop-filter: blur(5px);
+}
+
+.welcome-modal__card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 28rem);
+  padding: clamp(1.75rem, 6vw, 2.75rem);
+  border: 1px solid rgb(255 255 255 / 75%);
+  border-radius: 1.5rem;
+  background: linear-gradient(145deg, #fffaff, #f8eaf5);
+  box-shadow: 0 24px 80px rgb(26 10 24 / 35%);
+  text-align: center;
+  animation: welcome-modal-enter 220ms ease-out;
+}
+
+.welcome-modal__eyebrow {
+  margin: 0 0 0.6rem;
+  color: #873e79;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.welcome-modal__card h2 {
+  margin: 0;
+  color: #54234e;
+  font-size: clamp(1.75rem, 7vw, 2.35rem);
+  line-height: 1.15;
+}
+
+.welcome-modal__card > p:not(.welcome-modal__eyebrow) {
+  margin: 1rem 0 1.5rem;
+  color: #62485e;
+  line-height: 1.6;
+}
+
+.welcome-modal__link,
+.welcome-modal__close {
+  display: block;
+  width: 100%;
+  min-height: 2.9rem;
+  border-radius: 0.75rem;
+  font: inherit;
+  font-weight: 700;
+}
+
+.welcome-modal__link {
+  padding: 0.8rem 1rem;
+  background: #743366;
+  color: #fff;
+  text-decoration: none;
+  transition: background-color 160ms ease;
+}
+
+.welcome-modal__link:hover {
+  background: #58264d;
+}
+
+.welcome-modal__close {
+  margin-top: 0.65rem;
+  border: 0;
+  background: transparent;
+  color: #62485e;
+  cursor: pointer;
+}
+
+.welcome-modal__link:focus-visible,
+.welcome-modal__close:focus-visible {
+  outline: 3px solid #b86ca8;
+  outline-offset: 3px;
+}
+
+@keyframes welcome-modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-modal__card {
+    animation: none;
+  }
+}

@@ -27,6 +27,10 @@
               {
                 "glob": "**/*",
                 "input": "src/assets"
+              },
+              {
+                "glob": "ramo_violetas_3d_responsive.html",
+                "input": "src/app"
               }
             ],
             "styles": [

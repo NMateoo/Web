@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eadde8">
+<meta name="description" content="Un ramo de flores violetas en 3D. Una postal interactiva y adaptable a móviles.">
+<title>Un ramo para ti · Flores violetas 3D</title>
+<style>
+:root { color-scheme: light; --ink:#6d4b7e; --violet:#8653bb; }
+* {box-sizing:border-box;}
+html,body {margin:0;width:100%;min-height:100%;overflow:hidden;}
+body {font-family: Georgia, "Times New Roman", serif;background:#e8d9e5;touch-action:pan-y;}
+.scene{
+  isolation:isolate;position:relative;width:100vw;height:100vh;height:100dvh;
+  min-height:480px;overflow:hidden;
+  background:
+   radial-gradient(ellipse 52% 41% at 47% 27%, #fff2faad 0%,transparent 85%),
+   linear-gradient(178deg,#e9d9e4 0%,#e2ccdf 43%,#e8d3de 63%,#f4e6d7 100%);
+}
+.scene::before{
+ content:"";position:absolute;inset:0 0 41%;
+ background:
+ radial-gradient(circle at 5% 18%,#fffbff8a 0 12px,transparent 13px),
+ radial-gradient(circle at 19% 11%,#fff1ff9c 0 13px,transparent 14px),
+ radial-gradient(circle at 94% 25%,#fff4ff9c 0 11px,transparent 12px),
+ radial-gradient(circle at 83% 43%,#fff3fe7c 0 7px,transparent 8px),
+ radial-gradient(circle at 55% 12%,#fff7ff80 0 9px,transparent 10px);
+ filter:blur(1px);pointer-events:none;
+}
+.back-glow{
+ position:absolute;left:50%;top:32%;width:min(85vw,700px);height:min(86vw,660px);
+ transform:translate(-50%,-50%);
+ background:radial-gradient(ellipse,#fff0fdad 0%,#f7ddfa52 36%,transparent 72%);
+ filter:blur(35px);pointer-events:none;
+}
+.floor{
+ position:absolute;inset:57% 0 0;overflow:hidden;
+ background:linear-gradient(#f6e8d6 0%,#e9d1b3 63%,#e6cfb2 100%);
+ border-top:1px solid #fff4e69e;
+ box-shadow:0 -7px 28px #f6ead172;
+}
+.floor::before{
+ content:"";position:absolute;inset:-25% -55% -15%;
+ background:
+ repeating-linear-gradient(92deg,transparent 0 7.6%,#a9876038 7.7%,#fffbef62 7.85%,transparent 8.2%,transparent 16.1%),
+ repeating-linear-gradient(0deg,transparent 0 100px,#bb956e18 101px,#fff5df3f 102px,transparent 105px);
+ transform:perspective(450px) rotateX(49deg) scale(1.37);
+ transform-origin:50% 0;
+ filter:blur(.7px);
+}
+.floor::after{
+ content:"";position:absolute;inset:0;
+ background:linear-gradient(90deg,#fff9e766,transparent 25%,#e0bd9a15 63%,#fff8ee44);
+}
+.floor-shadow{
+ position:absolute;left:50%;top:77%;width:min(70vw,430px);height:52px;
+ transform:translate(-50%,-50%);filter:blur(15px);
+ background:radial-gradient(ellipse,#5f3e643e 0%,#6c476c17 53%,transparent 75%);pointer-events:none;
+}
+#bouquet {
+ position:absolute;inset:0;width:100%;height:100%;display:block;
+ touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;z-index:3;
+}
+#bouquet:active{cursor:grabbing;}
+.confetti {position:absolute;inset:0;z-index:4;pointer-events:none;}
+.header{
+ position:absolute;top:clamp(21px,4.8dvh,46px);left:50%;transform:translateX(-50%);
+ z-index:7;text-align:center;white-space:nowrap;pointer-events:none;
+}
+.header .kicker {display:block;letter-spacing:.34em;text-transform:uppercase;font:500 9px/1.5 system-ui,sans-serif;color:#9d7b9d;}
+.header h1{
+ margin:5px 0 0;font-size:clamp(21px,3.7vh,35px);font-weight:400;
+ letter-spacing:.025em;color:#77527f;text-shadow:0 1px 1px #fff7ffb3;
+}
+.header .heart{font-size:.75em;color:#ad7bc1;}
+.hint{
+ position:absolute;z-index:7;bottom:max(18px,env(safe-area-inset-bottom));
+ left:50%;transform:translateX(-50%);pointer-events:none;
+ font:500 10px/1.2 system-ui,sans-serif;letter-spacing:.07em;
+ border:1px solid #ffffffbd;background:#fffbffac;color:#936d9b;
+ padding:10px 15px;border-radius:100px;white-space:nowrap;
+ box-shadow:0 4px 16px #62425a15;backdrop-filter:blur(6px);
+ opacity:.88;
+}
+.hint svg {width:13px;height:13px;vertical-align:-2px;margin-right:5px;}
+.sparkle{
+ position:absolute;z-index:4;background:#fff;border-radius:50%;
+ width:3px;height:3px;pointer-events:none;box-shadow:0 0 6px #fff;
+ animation:twinkle 3s ease-in-out infinite alternate;
+}
+@keyframes twinkle{from{opacity:.2;transform:scale(.5)}to{opacity:1;transform:scale(1.4)}}
+.spool{position:absolute;z-index:2;right:clamp(11px,15%,150px);bottom:clamp(58px,9%,120px);
+ transform:rotate(-6deg);filter:drop-shadow(0 5px 3px #65447224);opacity:.94;}
+.spool .cap{width:50px;height:15px;border-radius:50%;position:relative;z-index:2;
+ background:radial-gradient(ellipse at 30% 35%,#fff 0%,#fdf9f9 54%,#dfd1e5 95%);
+ box-shadow:inset 0 -2px 3px #b5a0b8;}
+.spool .cap::after{content:"";position:absolute;top:5px;left:20px;width:11px;height:5px;background:#b6a2a9;border-radius:50%;}
+.spool .thread{margin:-4px 5px 0;height:19px;background:linear-gradient(90deg,#632c8e,#a15bd4 34%,#7d42bc 71%,#5b2c84);
+ border-radius:0 0 12px 12px;box-shadow:inset 0 3px 4px #61336a5c;}
+.spool .foot{height:9px;width:53px;margin:-3px 0 0 -1px;border-radius:50%;background:linear-gradient(#fffcff,#dfd4df);}
+@media(max-width:480px) {
+ .header {top:max(22px,env(safe-area-inset-top) + 17px);}
+ .header h1 {font-size:23px;}
+ .header .kicker {font-size:8px;}
+ .hint {font-size:9px;padding:9px 12px;bottom:max(15px,env(safe-area-inset-bottom) + 10px);}
+ .spool{right:8%;bottom:13%;transform:rotate(-6deg) scale(.72);transform-origin:bottom right;}
+ .floor{top:60%;}
+ .floor-shadow{top:82%;}
+}
+@media(max-height:580px){
+ .header{top:13px;}
+ .header h1{font-size:19px;margin-top:2px;}
+ .hint{bottom:10px;}
+ .spool{transform:scale(.7);transform-origin:bottom right;}
+}
+@media(prefers-reduced-motion:reduce){.sparkle{animation:none}}
+</style>
+</head>
+<body>
+<main class="scene" id="scene">
+ <div class="back-glow"></div>
+ <div class="floor" aria-hidden="true"></div>
+ <div class="floor-shadow" aria-hidden="true"></div>
+ <div class="header"><span class="kicker">Un detalle especial</span><h1>Un ramo para ti <span class="heart">♡</span></h1></div>
+ <div class="spool" aria-hidden="true"><div class="cap"></div><div class="thread"></div><div class="foot"></div></div>
+ <canvas id="bouquet" aria-label="Ramo de flores violetas tridimensional. Desliza para girarlo." role="img">Un ramo de flores violetas envuelto en papel kraft.</canvas>
+ <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+ <div class="hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 12h14m-5-5 5 5-5 5M10 7l-5 5 5 5"/></svg>Desliza para girar el ramo</div>
+</main>
+<script>
+(() => {
+ 'use strict';
+ const canvas = document.getElementById('bouquet');
+ const ctx = canvas.getContext('2d', {alpha:true,desynchronized:true});
+ const fxCanvas = document.getElementById('confetti');
+ const fx = fxCanvas.getContext('2d', {alpha:true});
+ const scene = document.getElementById('scene');
+ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const mobile = matchMedia('(pointer:coarse)').matches;
+ const rand = mulberry32(4227);
+ const uniform=(a,b)=>a+(b-a)*rand();
+ const palette = ['#9272d2','#8860c2','#ac88db','#7548b7','#b69ce9','#704cb4','#9f7cdd','#7550af'];
+ const objects=[];
+ let w=0,h=0,dpr=1,scale=1,offX=0,offY=0,yaw=0,pitch=0;
+ let targetYaw=0,targetPitch=0,dragging=false,px=0,py=0,previous=0,lastDraw=-1000;
+ const confetti=[];
+ function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;}}
+ function v(x,y,z){return [x,y,z];}
+ function avg(p){return p.reduce((s,a)=>s+a[2],0)/p.length;}
+ function add(type,pts,opt={}){objects.push({type,pts,opt});}
+ function stem(a,b,color='#487f61',thickness=.045){
+   const pts=[];for(let i=0;i<=6;i++){let t=i/6;pts.push(v(a[0]+(b[0]-a[0])*t+Math.sin(t*Math.PI)*.09,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t));}
+   add('stem',pts,{color,thickness});
+ }
+ function leaf(x,y,z,angle,length,width=.16,tint='#43896c'){
+   const dir=[Math.cos(angle),Math.sin(angle)];
+   let pts=[];
+   const n=8;
+   for(let s=-1;s<=1;s+=2){
+     const side=s<0?1:-1;
+     const run=side>0?Array.from({length:n+1},(_,i)=>i/n):Array.from({length:n+1},(_,i)=>1-i/n);
+     for(const t of run){
+       const lat= Math.pow(Math.sin(Math.PI*t),.92)*width*s;
+       pts.push(v(x+dir[0]*t*length-dir[1]*lat,
+            y+dir[1]*t*length+dir[0]*lat,
+            z+Math.sin(t*Math.PI)*.12));
+     }
+   }
+   add('leaf',pts,{color:tint});
+ }
+ function flower(cx,cy,cz,r=.56,color='#8a60c6',angle=0){
+   const petals=5;
+   const center=v(cx,cy,cz+.25);
+   stem(v(cx*.34,-1.5,-.85),v(cx,cy-.08,cz-.28),'#497e5a',.035);
+   for(let j=0;j<petals;j++){
+     const a=angle+j*Math.PI*2/petals;
+     const L=r*uniform(.85,1.18);
+     const width=L*uniform(.43,.53);
+     const pts=[];
+     let rad=(t)=>.10 + t*L;
+     for(let i=0;i<=13;i++){
+       let t=i/13,q=Math.pow(Math.sin(Math.PI*t),.75);
+       const dist=rad(t),lat=width*q;
+       pts.push(v(cx+Math.cos(a)*dist-Math.sin(a)*lat,
+            cy+Math.sin(a)*dist+Math.cos(a)*lat,
+            cz+.13+Math.sin(t*Math.PI)*.19+(.15*Math.cos(a))));
+     }
+     for(let i=13;i>=0;i--){
+       let t=i/13,q=Math.pow(Math.sin(Math.PI*t),.75);
+       const dist=rad(t),lat=-width*q;
+       pts.push(v(cx+Math.cos(a)*dist-Math.sin(a)*lat,
+            cy+Math.sin(a)*dist+Math.cos(a)*lat,
+            cz+.13+Math.sin(t*Math.PI)*.19+(.15*Math.cos(a))));
+     }
+     add('petal',pts,{color,base:center,tip:v(cx+Math.cos(a)*(L+.1),cy+Math.sin(a)*(L+.1),cz+.13),highlight:j%2===0});
+   }
+   // Bright inner star, typical of the flowers in the reference.
+   for(let j=0;j<5;j++){
+     let a=angle+.13+j*Math.PI*2/5,pts=[];
+     for(let i=0;i<=5;i++){
+       let t=i/5,d=.04+t*r*.29,lat=.08*Math.sin(Math.PI*t);
+       pts.push(v(cx+Math.cos(a)*d-Math.sin(a)*lat,cy+Math.sin(a)*d+Math.cos(a)*lat,cz+.37));
+     }
+     for(let i=5;i>=0;i--){
+       let t=i/5,d=.04+t*r*.29,lat=-.08*Math.sin(Math.PI*t);
+       pts.push(v(cx+Math.cos(a)*d-Math.sin(a)*lat,cy+Math.sin(a)*d+Math.cos(a)*lat,cz+.37));
+     }
+     add('petal',pts,{color:'#fdf3ed',base:center,tip:pts[5],centerPetal:true});
+   }
+   add('dot',[v(cx,cy,cz+.50)],{color:'#f3c66a',size:.12,halo:true});
+   for(let i=0;i<3;i++){
+     let a=uniform(0,6.28);
+     add('dot',[v(cx+Math.cos(a)*.095,cy+Math.sin(a)*.095,cz+.53)],{color:'#fff2bd',size:.047});
+   }
+ }
+ function lavendar(x,endY,z,lean=0){
+   const start=v(lean*.12,-1.15,-.95), end=v(x,endY,z);
+   stem(start,end,'#608b66',.026);
+   // Velvet purple buds along the upper part of each spike.
+   for(let row=0;row<15;row++){
+     let t=.51+row/15*.48;
+     let bx=start[0]+(end[0]-start[0])*t,
+         by=start[1]+(end[1]-start[1])*t,
+         bz=start[2]+(end[2]-start[2])*t;
+     let width=(.11+(1-t)*.14)*(.75+rand()*.45);
+     for(let j=0;j<3;j++){
+       const a=j*Math.PI*2/3+row*1.45;
+       const p=v(bx+Math.cos(a)*width,by+Math.sin(a)*width*.65,bz+Math.sin(a)*width*.8);
+       add('bud',[p],{color:rand()>.55?'#8650b9':'#a47acd',size:uniform(.044,.084)});
+     }
+   }
+   leaf(start[0]+(end[0]-start[0])*.56,start[1]+(end[1]-start[1])*.56,-.2,uniform(1.8,2.6),uniform(.28,.48),.043,'#75a37e');
+ }
+ function smallWhite(x,y,z,s=1){
+   for(let j=0;j<5;j++){
+     const a=j*6.283/5,rr=.10*s;
+     add('dot',[v(x+Math.cos(a)*rr,y+Math.sin(a)*rr,z)],{color:'#f6fff3',size:.09*s});
+   }
+   add('dot',[v(x,y,z+.08)],{color:'#e6d58a',size:.055*s});
+ }
+ // Rear volume of leaves + secondary foliage.
+ for(let i=0;i<46;i++){
+   const y=uniform(.6,3.40),x=uniform(-2.22,2.22),z=uniform(-1.15,.65);
+   const angle=uniform(.2,Math.PI-.1);
+   stem(v(x*.33,-1.45,-.95),v(x,y,z),'#4f856b',uniform(.018,.036));
+   leaf(x,y,z,angle,uniform(.32,.85),uniform(.07,.16),rand()>.5?'#53916e':'#73ab83');
+ }
+ // Distinct tall purple lavender stems.
+ const sprigs=[
+ [-2.46,3.24,-.40],[-2.18,4.05,-.60],[-1.95,3.74,-.20],[-2.61,2.76,-.80],
+ [-1.43,4.50,-.86],[-.67,4.76,-.9],[-.23,4.28,-.95],[.37,4.88,-.8],
+ [.92,4.48,-1.], [1.62,4.78,-.75],[2.14,4.24,-.55],[2.52,3.51,-.50],
+ [2.76,3.02,-.5],[1.98,3.67,-.3],[-2.05,3.11,.2]
+ ];
+ sprigs.forEach(([x,y,z])=>lavendar(x,y,z));
+ // Blue-lilac filler clusters.
+ for(let i=0;i<14;i++){
+   let x=uniform(-2.18,2.21),y=uniform(2.15,4.1),z=uniform(-.45,.7);
+   add('bud',[v(x,y,z)],{color:rand()>.5?'#cfb2e9':'#9871c9',size:uniform(.09,.19)});
+ }
+ // Major violet flowers, arranged at several depths.
+ const blooms=[
+ [-1.88,2.67,.28,.59,'#b295e2'],[-1.35,3.45,.28,.53,'#7752ba'],
+ [-.45,3.57,.47,.66,'#b595e6'],[.50,3.65,.40,.60,'#7851b7'],
+ [1.46,3.44,.25,.62,'#9873d2'],[1.98,2.85,.33,.60,'#6d49b0'],
+ [-2.17,2.03,.50,.62,'#9671d0'],[-1.49,2.27,.78,.70,'#6d4aab'],
+ [-.61,2.73,.85,.82,'#a381db'],[.35,2.77,1.03,.79,'#845fc6'],
+ [1.32,2.42,.89,.73,'#ad90e1'],[2.12,2.00,.58,.56,'#7a4fbe'],
+ [-1.57,1.60,.97,.60,'#9777d7'],[-.63,1.72,1.27,.76,'#6945a7'],
+ [.34,1.66,1.37,.84,'#865ac7'],[1.28,1.59,1.20,.63,'#ae90e5'],
+ [-.34,2.17,1.67,.76,'#986dce'],[.71,2.27,1.48,.73,'#7550b5']
+ ];
+ blooms.forEach((b,i)=>flower(...b,i*.32));
+ // Delicate tiny white and pink accents.
+ for(let i=0;i<19;i++){
+   let x=uniform(-2.36,2.4),y=uniform(1.35,3.4),z=uniform(.65,1.65);
+   stem(v(x*.27,-1,-.7),v(x,y,z),'#6a9877',.018);
+   const n=3+Math.floor(rand()*3);
+   for(let j=0;j<n;j++){
+     smallWhite(x+uniform(-.25,.25),y+uniform(-.20,.20),z+uniform(-.05,.2),uniform(.34,.66));
+   }
+ }
+ // Wrapped paper: lavender tissue, kraft folds and lower cone.
+ add('paper',[
+   v(-2.94,1.55,-.26),v(-3.10,2.0,-.10),v(-2.10,1.26,.45),
+   v(-1.14,.87,.63),v(-2.38,.57,1.18)
+ ],{color:'#a991c2',shade:'tissue'});
+ add('paper',[
+   v(2.93,1.66,-.19),v(3.0,2.06,-.18),v(2.08,1.31,.34),
+   v(1.30,.85,.70),v(2.48,.52,1.18)
+ ],{color:'#d7c5de',shade:'tissue'});
+ add('paper',[
+   v(-2.62,1.27,.83),v(-1.59,1.57,.91),v(-.70,1.23,1.00),
+   v(.11,1.33,1.0),v(.97,1.10,1.0),v(2.50,1.58,.77),
+   v(2.66,.63,1.12),v(1.20,.24,1.37),v(-.9,.31,1.40),v(-2.73,.76,1.16)
+ ],{color:'#c3a9d5',shade:'tissue'});
+ // brown paper roll consists of subtly shaded vertical curved strips.
+ function mouthY(t){return 1.1-.41*(1-Math.abs(t))+.085*Math.sin((t+1)*5);}
+ const slices=24, rows=10;
+ for(let col=0;col<slices;col++){
+   const lo=col/slices*2-1, hi=(col+1)/slices*2-1;
+   for(let row=0;row<rows;row++){
+     const a=row/rows,b=(row+1)/rows;
+     const pos=(t,s)=>{
+       let top=mouthY(t),Y=top+( -2.71-top)*s;
+       const bend=1-.25*Math.sin(Math.PI*s);
+       const halfWidth=2.73*(1-s)+.45*s;
+       return v(t*halfWidth*bend, Y+Math.sin(s*Math.PI)*.014*Math.cos(t*6),
+         1.22 + .37*(1-t*t)*Math.sin(Math.PI*s*.85)+.11*Math.sin(t*13+s*4));
+     };
+     const colColor=['#b78249','#c19360','#b98b52','#c59a68','#b78854','#ba8850','#c19660'][Math.min(6,Math.floor((col/slices)*7))];
+     const f=uniform(-.035,.045);
+     add('paper',[pos(lo,a),pos(hi,a),pos(hi,b),pos(lo,b)],{color:colColor,shade:'kraft',brightness:f});
+   }
+ }
+ // folds drawn as pencil-like highlights over kraft.
+ for(let i=0;i<36;i++){
+   const t=uniform(-.95,.95),from=uniform(.12,.78),to=Math.min(.98,from+uniform(.12,.38));
+   const p=s=>{
+     const Y=mouthY(t)+(-2.71-mouthY(t))*s;
+     return v(t*(2.73*(1-s)+.45*s)*(1-.25*Math.sin(Math.PI*s)),Y,
+      1.65+.03*Math.sin(t*13+s*4));
+   };
+   add('paperStroke',[p(from),p(to)],{color:rand()>.55?'#f1d4a2':'#805929',alpha:uniform(.07,.2),thickness:uniform(.005,.016)});
+ }
+ // visible pointed fold on right
+ add('paper',[
+   v(2.35,1.07,1.56),v(2.74,1.09,1.5),v(1.75,-.02,1.81),v(1.90,.60,1.77)
+ ],{color:'#d2a36d',shade:'kraft'});
+ add('paperStroke',[v(2.71,1.06,1.53),v(1.82,-.04,1.84)],{color:'#fff2c7',alpha:.35,thickness:.026});
+ // green stems fanning out under the paper and near the ribbon.
+ for(let i=0;i<29;i++){
+   let t=(i-14)/14;
+   stem(v(t*.38,-2.55,1.20),v(t*.86,-4.65+uniform(-.12,.20),1.10+uniform(-.10,.12)),
+      i%4?'#5e9d62':'#317d47',uniform(.02,.042));
+ }
+ // Ribbon tails are 3d curved ribbons.
+ const tails=[
+   [v(-.06,-2.69,2.12),v(-.05,-3.0,2.18),v(-.49,-3.75,2.07),v(-.29,-3.64,2.1)],
+   [v(.04,-2.72,2.15),v(.26,-3.01,2.22),v(.45,-3.60,2.10),v(.57,-3.45,2.09)]
+ ];
+ tails.forEach((pts,i)=>add('ribbonTail',pts,{color:i?'#9550c6':'#a769d6'}));
+ // loops with broad, curved violet strokes + detail.
+ add('ribbon',[v(-.03,-2.63,2.12),v(-.53,-2.44,2.15),v(-.99,-2.52,2.12),
+                v(-.87,-2.95,2.16),v(-.12,-2.75,2.20)],{color:'#a56ed7',thickness:.15});
+ add('ribbon',[v(.05,-2.65,2.15),v(.43,-2.46,2.20),v(.97,-2.43,2.19),
+                v(.93,-2.89,2.23),v(.10,-2.78,2.23)],{color:'#8b49c0',thickness:.16});
+ add('dot',[v(0,-2.72,2.25)],{color:'#8e54b9',size:.17});
+ // Gift card with text at the bottom.
+ add('tag',[v(.43,-3.28,2.26),v(1.15,-3.14,2.26),v(1.04,-3.70,2.28),v(.40,-3.82,2.29)],
+     {text:'Para ti'});
+ // 2.5D camera transforms projected polygons from genuine 3D world positions.
+ function project(p){
+   let [x,y,z]=p;
+   const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+   let xx=x*cy+z*sy,zz=z*cy-x*sy;
+   let yy=y*cp-zz*sp,zz2=y*sp+zz*cp;
+   const persp=13.8/(13.8-zz2);
+   return {x:offX+xx*scale*persp,y:offY-yy*scale*persp,
+           depth:zz2,persp};
+ }
+ function rgb(hex){hex=hex.replace('#','');return [0,2,4].map(n=>parseInt(hex.slice(n,n+2),16));}
+ function blend(hex1,hex2,t,alpha=1){
+   let a=rgb(hex1),b=rgb(hex2);
+   return `rgba(${a.map((v,i)=>Math.round(v*(1-t)+b[i]*t)).join(',')},${alpha})`;
+ }
+ function pathPoly(points){
+   ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
+   for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);
+   ctx.closePath();
+ }
+ function renderObj(o,points){
+   const op=o.opt;
+   switch(o.type){
+    case 'paper': {
+      pathPoly(points);
+      let xs=points.map(p=>p.x),ys=points.map(p=>p.y);
+      const x0=Math.min(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+      const grad=ctx.createLinearGradient(x0,y0,x0+60,y1);
+      if(op.shade==='tissue'){
+       grad.addColorStop(0,blend(op.color,'#fef6fc',.26));
+       grad.addColorStop(.55,op.color);grad.addColorStop(1,blend(op.color,'#71578a',.20));
+      }else{
+       grad.addColorStop(0,blend(op.color,'#ffecbc',.12+Math.abs(op.brightness||0)));
+       grad.addColorStop(.63,op.color);
+       grad.addColorStop(1,blend(op.color,'#5a3a22',.09));
+      }
+      ctx.fillStyle=grad;ctx.fill();
+      if(op.shade==='tissue'){ctx.strokeStyle='#fff5fd5a';ctx.lineWidth=1.2;ctx.stroke();}
+      break;
+    }
+    case 'paperStroke':{
+      ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);ctx.lineTo(points[1].x,points[1].y);
+      ctx.strokeStyle=blend(op.color,op.color,0,op.alpha);
+      ctx.lineWidth=Math.max(.5,op.thickness*scale);ctx.stroke();break;
+    }
+    case 'stem':{
+      ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
+      for(let j=1;j<points.length;j++)ctx.lineTo(points[j].x,points[j].y);
+      ctx.lineWidth=Math.max(.75,op.thickness*scale*points[0].persp);
+      ctx.strokeStyle=op.color;ctx.lineCap='round';ctx.stroke();
+      break;
+    }
+    case 'leaf':{
+      pathPoly(points);
+      const grad=ctx.createLinearGradient(points[1].x,points[1].y,points[Math.floor(points.length*.50)].x,points[Math.floor(points.length*.50)].y);
+      grad.addColorStop(0,blend(op.color,'#d4e8b0',.46));
+      grad.addColorStop(.55,op.color);
+      grad.addColorStop(1,blend(op.color,'#285f40',.37));
+      ctx.fillStyle=grad;ctx.fill();
+      ctx.strokeStyle='#225c4740';ctx.lineWidth=.65;ctx.stroke();
+      break;
+    }
+    case 'petal':{
+      pathPoly(points);
+      const base=project(op.base),tip=project(op.tip);
+      const grad=ctx.createLinearGradient(base.x,base.y,tip.x,tip.y);
+      grad.addColorStop(0,op.centerPetal?'#fffef3':blend(op.color,'#492d82',.49));
+      grad.addColorStop(.32,op.centerPetal?'#fff9dd':op.color);
+      grad.addColorStop(.82,op.centerPetal?'#fbf7e8':blend(op.color,'#e2c6ff',.36));
+      grad.addColorStop(1,op.centerPetal?'#fcfcf4':blend(op.color,'#58349d',.10));
+      ctx.fillStyle=grad;
+      if(!mobile){ctx.shadowColor='#4e2b6820';ctx.shadowBlur=3;}
+      ctx.fill();ctx.shadowBlur=0;
+      ctx.strokeStyle=op.centerPetal?'#ffffff55':'#ffffff38';ctx.lineWidth=.78;ctx.stroke();
+      if(op.highlight&&!op.centerPetal){
+       ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo((base.x+tip.x)*.5-2,(base.y+tip.y)*.5-2,tip.x,tip.y);
+       ctx.strokeStyle='#f2d6ff45';ctx.lineWidth=1;ctx.stroke();
+      }
+      break;
+    }
+    case 'dot': case 'bud':{
+      const p=points[0],r=Math.max(.8,op.size*scale*p.persp);
+      ctx.beginPath();ctx.ellipse(p.x,p.y,r*(o.type==='bud'?.77:1),r,0,0,6.283);
+      const gr=ctx.createRadialGradient(p.x-r*.35,p.y-r*.40,.2,p.x,p.y,r*1.18);
+      gr.addColorStop(0,blend(op.color,'#ffffff',.55));
+      gr.addColorStop(.6,op.color);
+      gr.addColorStop(1,blend(op.color,'#37234f',.23));
+      ctx.fillStyle=gr;ctx.fill();break;
+    }
+    case 'ribbonTail':{
+      ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
+      ctx.bezierCurveTo(points[1].x,points[1].y,points[2].x,points[2].y,points[3].x,points[3].y);
+      ctx.lineWidth=.17*scale;ctx.strokeStyle='#5b278c50';ctx.stroke();
+      ctx.lineWidth=.13*scale;ctx.strokeStyle=op.color;ctx.stroke();break;
+    }
+    case 'ribbon':{
+      ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
+      ctx.bezierCurveTo(points[1].x,points[1].y,points[2].x,points[2].y,points[3].x,points[3].y);
+      ctx.quadraticCurveTo(points[4].x,points[4].y,points[0].x,points[0].y);
+      ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.lineWidth=op.thickness*scale*1.18;ctx.strokeStyle='#603581a9';ctx.stroke();
+      ctx.lineWidth=op.thickness*scale*.80;ctx.strokeStyle=op.color;ctx.stroke();
+      break;
+    }
+    case 'tag':{
+      pathPoly(points);
+      ctx.shadowColor='#5433444d';ctx.shadowBlur=4;ctx.shadowOffsetY=3;
+      ctx.fillStyle='#fffaf1';ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+      ctx.lineWidth=1.2;ctx.strokeStyle='#e1d5cd';ctx.stroke();
+      const cx=points.reduce((s,p)=>s+p.x,0)/4,cy=points.reduce((s,p)=>s+p.y,0)/4;
+      ctx.save();ctx.translate(cx,cy);ctx.rotate(-.075);
+      ctx.font=`italic ${Math.max(8,Math.min(13,scale*.16))}px Georgia,serif`;
+      ctx.fillStyle='#95658f';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(op.text,0,1);
+      ctx.restore();break;
+    }
+   }
+ }
+ function resize(){
+   const r=scene.getBoundingClientRect();w=r.width;h=r.height;
+   dpr=Math.min(window.devicePixelRatio||1,2);
+   for(const c of [canvas,fxCanvas]){c.width=Math.ceil(w*dpr);c.height=Math.ceil(h*dpr);c.style.width=w+'px';c.style.height=h+'px';}
+   ctx.setTransform(dpr,0,0,dpr,0,0);fx.setTransform(dpr,0,0,dpr,0,0);
+   scale=Math.min(w/7.05,h/10.2);
+   offX=w*.50;offY=h*(w<500?.515:.52);
+   if(w<390){scale*=.95;}
+   if(w>900){scale=Math.min(scale,79);}
+   scene.querySelector('.floor-shadow').style.top=Math.min(h*.95,offY+4.68*scale+7)+'px';
+   confetti.length=0;
+   let count=mobile?32:59;
+   for(let i=0;i<count;i++)confetti.push({
+      x:uniform(0,w),y:uniform(0,h),r:uniform(1.7,5.2),vx:uniform(-.22,.20),
+      vy:uniform(.22,.74),rot:uniform(0,6.28),vr:uniform(-.012,.012),alpha:uniform(.25,.72),
+      color:rand()>.4?'#9b5aca':'#c6a3eb'
+   });
+ }
+ function drawBouquet(t){
+   ctx.clearRect(0,0,w,h);
+   ctx.save();
+   // Slow sway also makes the volume of the flowers visible.
+   yaw+=(targetYaw-yaw)*.055;
+   pitch+=(targetPitch-pitch)*.055;
+   const sorted=objects.map(o=>{
+     const pts=o.pts.map(project);
+     return {o,pts,depth:pts.reduce((s,p)=>s+p.depth,0)/pts.length};
+   }).sort((a,b)=>a.depth-b.depth);
+   for(const item of sorted)renderObj(item.o,item.pts);
+   ctx.restore();
+ }
+ function drawConfetti(delta=16){
+   fx.clearRect(0,0,w,h);
+   const rate=Math.min(2,delta/16);
+   for(const p of confetti){
+      if(!reduceMotion){p.y+=p.vy*rate;p.x+=p.vx*rate+Math.sin(p.y*.013)*.09;
+       p.rot+=p.vr*rate;if(p.y>h+12){p.y=-10;p.x=uniform(0,w);}
+       if(p.x<0)p.x=w+5;if(p.x>w+5)p.x=0;
+      }
+      fx.save();fx.globalAlpha=p.alpha;
+      fx.translate(p.x,p.y);fx.rotate(p.rot);fx.scale(.5,1.3);
+      fx.fillStyle=p.color;fx.beginPath();fx.ellipse(0,0,p.r*.65,p.r,Math.PI/4,0,6.283);fx.fill();
+      fx.restore();
+   }
+ }
+ function tick(time){
+   const interval=mobile?1000/30:1000/50;
+   if(!reduceMotion&&time-lastDraw<interval){requestAnimationFrame(tick);return;}
+   lastDraw=time;
+   let delta= Math.min(time-previous,40);previous=time;
+   if(!dragging&&!reduceMotion)targetYaw=Math.sin(time*.00032)*.11;
+   drawBouquet(time);drawConfetti(delta);
+   if(!reduceMotion||dragging||Math.abs(targetYaw-yaw)>.001||Math.abs(targetPitch-pitch)>.001)requestAnimationFrame(tick);
+ }
+ canvas.addEventListener('pointerdown',e=>{
+   dragging=true;px=e.clientX;py=e.clientY;
+   canvas.setPointerCapture(e.pointerId);
+ });
+ canvas.addEventListener('pointermove',e=>{
+   if(!dragging)return;
+   targetYaw=Math.max(-.66,Math.min(.66,targetYaw+(e.clientX-px)*.004));
+   targetPitch=Math.max(-.17,Math.min(.17,targetPitch+(e.clientY-py)*.0018));
+   px=e.clientX;py=e.clientY;
+   if(reduceMotion)requestAnimationFrame(tick);
+ });
+ for(const type of ['pointerup','pointercancel','lostpointercapture'])
+   canvas.addEventListener(type,()=>{dragging=false;});
+ window.addEventListener('resize',()=>{resize();if(reduceMotion)requestAnimationFrame(tick);},{passive:true});
+ resize();
+ requestAnimationFrame(tick);
+ // Screenreader motion and usage information.
+})();
+</script>
+</body>
+</html>

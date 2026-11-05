@@ -84,6 +84,10 @@ body {font-family: Georgia, "Times New Roman", serif;background:#e8d9e5;touch-ac
  opacity:.88;
 }
 .hint svg {width:13px;height:13px;vertical-align:-2px;margin-right:5px;}
+.rendering-error{
+ position:absolute;z-index:8;inset:auto 20px 70px;text-align:center;
+ font:14px/1.5 system-ui,sans-serif;color:#6d4b7e;
+}
 .sparkle{
  position:absolute;z-index:4;background:#fff;border-radius:50%;
  width:3px;height:3px;pointer-events:none;box-shadow:0 0 6px #fff;
@@ -126,29 +130,60 @@ body {font-family: Georgia, "Times New Roman", serif;background:#e8d9e5;touch-ac
  <div class="spool" aria-hidden="true"><div class="cap"></div><div class="thread"></div><div class="foot"></div></div>
  <canvas id="bouquet" aria-label="Ramo de flores violetas tridimensional. Desliza para girarlo." role="img">Un ramo de flores violetas envuelto en papel kraft.</canvas>
  <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
- <div class="hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 12h14m-5-5 5 5-5 5M10 7l-5 5 5 5"/></svg>Desliza para girar el ramo</div>
+<p class="rendering-error" id="rendering-error" role="status" hidden>No se pudo iniciar la escena 3D en este navegador. Prueba a abrir la postal en un navegador actualizado.</p>
+<div class="hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 12h14m-5-5 5 5-5 5M10 7l-5 5 5 5"/></svg>Desliza para girar el ramo</div>
 </main>
-<script>
+<script type="module">
+let THREE;
+try {
+  THREE=await import('./vendor/three/three.module.js');
+} catch(error) {
+  console.error('No se pudo cargar Three.js para la postal.',error);
+  const message=document.getElementById('rendering-error');
+  message.textContent=location.protocol==='file:'
+    ?'Abre esta postal desde la web o desde un servidor local para cargar la escena 3D.'
+    :'No se pudo cargar la escena 3D. Prueba a recargar la página o a usar un navegador actualizado.';
+  message.hidden=false;
+}
+if(THREE){
 (() => {
- 'use strict';
- const canvas = document.getElementById('bouquet');
- const ctx = canvas.getContext('2d', {alpha:true,desynchronized:true});
- const fxCanvas = document.getElementById('confetti');
- const fx = fxCanvas.getContext('2d', {alpha:true});
- const scene = document.getElementById('scene');
- const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
- const mobile = matchMedia('(pointer:coarse)').matches;
- const rand = mulberry32(4227);
- const uniform=(a,b)=>a+(b-a)*rand();
- const palette = ['#9272d2','#8860c2','#ac88db','#7548b7','#b69ce9','#704cb4','#9f7cdd','#7550af'];
+'use strict';
+const canvas = document.getElementById('bouquet');
+const fxCanvas = document.getElementById('confetti');
+const fx = fxCanvas.getContext('2d', {alpha:true});
+const scene = document.getElementById('scene');
+const renderingError = document.getElementById('rendering-error');
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const rand = mulberry32(4227);
+const uniform=(a,b)=>a+(b-a)*rand();
  const objects=[];
- let w=0,h=0,dpr=1,scale=1,offX=0,offY=0,yaw=0,pitch=0;
- let targetYaw=0,targetPitch=0,dragging=false,px=0,py=0,previous=0,lastDraw=-1000;
+let w=0,h=0,dpr=1,scale=1,yaw=0,pitch=0;
+ let targetYaw=0,targetPitch=0,dragging=false,px=0,py=0,animationFrame=null;
  const confetti=[];
- function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;}}
- function v(x,y,z){return [x,y,z];}
- function avg(p){return p.reduce((s,a)=>s+a[2],0)/p.length;}
- function add(type,pts,opt={}){objects.push({type,pts,opt});}
+let renderer;
+try {
+  renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true,powerPreference:'low-power'});
+} catch(error) {
+  console.error('No se pudo crear el renderizador 3D del ramo.',error);
+  renderingError.hidden=false;
+  return;
+}
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.setClearColor(0x000000,0);
+const threeScene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(35,1,.1,100);
+camera.position.z=13.8;
+threeScene.add(new THREE.HemisphereLight('#fff8ff','#806a55',1.25));
+const keyLight=new THREE.DirectionalLight('#fff9eb',1.6);
+keyLight.position.set(-4,7,10);
+threeScene.add(keyLight);
+const bouquetPitch=new THREE.Group();
+const bouquetYaw=new THREE.Group();
+bouquetPitch.add(bouquetYaw);
+threeScene.add(bouquetPitch);
+function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;}}
+function v(x,y,z){return [x,y,z];}
+function add(type,pts,opt={}){objects.push({type,pts,opt});}
  function stem(a,b,color='#487f61',thickness=.045){
    const pts=[];for(let i=0;i<=6;i++){let t=i/6;pts.push(v(a[0]+(b[0]-a[0])*t+Math.sin(t*Math.PI)*.09,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t));}
    add('stem',pts,{color,thickness});
@@ -350,176 +385,244 @@ body {font-family: Georgia, "Times New Roman", serif;background:#e8d9e5;touch-ac
  // Gift card with text at the bottom.
  add('tag',[v(.43,-3.28,2.26),v(1.15,-3.14,2.26),v(1.04,-3.70,2.28),v(.40,-3.82,2.29)],
      {text:'Para ti'});
- // 2.5D camera transforms projected polygons from genuine 3D world positions.
- function project(p){
-   let [x,y,z]=p;
-   const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
-   let xx=x*cy+z*sy,zz=z*cy-x*sy;
-   let yy=y*cp-zz*sp,zz2=y*sp+zz*cp;
-   const persp=13.8/(13.8-zz2);
-   return {x:offX+xx*scale*persp,y:offY-yy*scale*persp,
-           depth:zz2,persp};
+ const bucketTypes=['paper','leaf','petal','stem','paperStroke','ribbon'];
+ const buckets=Object.fromEntries(bucketTypes.map(type=>[type,{positions:[],colors:[],indices:[]}]));
+ const point3D=point=>new THREE.Vector3(point[0],point[1],point[2]);
+ const colorMix=(from,to,amount)=>new THREE.Color(from).lerp(new THREE.Color(to),amount);
+ function setSolidColor(geometry,color){
+   const attribute=geometry.getAttribute('position'),colors=[];
+   const value=new THREE.Color(color);
+   for(let i=0;i<attribute.count;i++)colors.push(value.r,value.g,value.b);
+   geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
  }
- function rgb(hex){hex=hex.replace('#','');return [0,2,4].map(n=>parseInt(hex.slice(n,n+2),16));}
- function blend(hex1,hex2,t,alpha=1){
-   let a=rgb(hex1),b=rgb(hex2);
-   return `rgba(${a.map((v,i)=>Math.round(v*(1-t)+b[i]*t)).join(',')},${alpha})`;
- }
- function pathPoly(points){
-   ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
-   for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);
-   ctx.closePath();
- }
- function renderObj(o,points){
-   const op=o.opt;
-   switch(o.type){
-    case 'paper': {
-      pathPoly(points);
-      let xs=points.map(p=>p.x),ys=points.map(p=>p.y);
-      const x0=Math.min(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
-      const grad=ctx.createLinearGradient(x0,y0,x0+60,y1);
-      if(op.shade==='tissue'){
-       grad.addColorStop(0,blend(op.color,'#fef6fc',.26));
-       grad.addColorStop(.55,op.color);grad.addColorStop(1,blend(op.color,'#71578a',.20));
-      }else{
-       grad.addColorStop(0,blend(op.color,'#ffecbc',.12+Math.abs(op.brightness||0)));
-       grad.addColorStop(.63,op.color);
-       grad.addColorStop(1,blend(op.color,'#5a3a22',.09));
-      }
-      ctx.fillStyle=grad;ctx.fill();
-      if(op.shade==='tissue'){ctx.strokeStyle='#fff5fd5a';ctx.lineWidth=1.2;ctx.stroke();}
-      break;
-    }
-    case 'paperStroke':{
-      ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);ctx.lineTo(points[1].x,points[1].y);
-      ctx.strokeStyle=blend(op.color,op.color,0,op.alpha);
-      ctx.lineWidth=Math.max(.5,op.thickness*scale);ctx.stroke();break;
-    }
-    case 'stem':{
-      ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
-      for(let j=1;j<points.length;j++)ctx.lineTo(points[j].x,points[j].y);
-      ctx.lineWidth=Math.max(.75,op.thickness*scale*points[0].persp);
-      ctx.strokeStyle=op.color;ctx.lineCap='round';ctx.stroke();
-      break;
-    }
-    case 'leaf':{
-      pathPoly(points);
-      const grad=ctx.createLinearGradient(points[1].x,points[1].y,points[Math.floor(points.length*.50)].x,points[Math.floor(points.length*.50)].y);
-      grad.addColorStop(0,blend(op.color,'#d4e8b0',.46));
-      grad.addColorStop(.55,op.color);
-      grad.addColorStop(1,blend(op.color,'#285f40',.37));
-      ctx.fillStyle=grad;ctx.fill();
-      ctx.strokeStyle='#225c4740';ctx.lineWidth=.65;ctx.stroke();
-      break;
-    }
-    case 'petal':{
-      pathPoly(points);
-      const base=project(op.base),tip=project(op.tip);
-      const grad=ctx.createLinearGradient(base.x,base.y,tip.x,tip.y);
-      grad.addColorStop(0,op.centerPetal?'#fffef3':blend(op.color,'#492d82',.49));
-      grad.addColorStop(.32,op.centerPetal?'#fff9dd':op.color);
-      grad.addColorStop(.82,op.centerPetal?'#fbf7e8':blend(op.color,'#e2c6ff',.36));
-      grad.addColorStop(1,op.centerPetal?'#fcfcf4':blend(op.color,'#58349d',.10));
-      ctx.fillStyle=grad;
-      if(!mobile){ctx.shadowColor='#4e2b6820';ctx.shadowBlur=3;}
-      ctx.fill();ctx.shadowBlur=0;
-      ctx.strokeStyle=op.centerPetal?'#ffffff55':'#ffffff38';ctx.lineWidth=.78;ctx.stroke();
-      if(op.highlight&&!op.centerPetal){
-       ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.quadraticCurveTo((base.x+tip.x)*.5-2,(base.y+tip.y)*.5-2,tip.x,tip.y);
-       ctx.strokeStyle='#f2d6ff45';ctx.lineWidth=1;ctx.stroke();
-      }
-      break;
-    }
-    case 'dot': case 'bud':{
-      const p=points[0],r=Math.max(.8,op.size*scale*p.persp);
-      ctx.beginPath();ctx.ellipse(p.x,p.y,r*(o.type==='bud'?.77:1),r,0,0,6.283);
-      const gr=ctx.createRadialGradient(p.x-r*.35,p.y-r*.40,.2,p.x,p.y,r*1.18);
-      gr.addColorStop(0,blend(op.color,'#ffffff',.55));
-      gr.addColorStop(.6,op.color);
-      gr.addColorStop(1,blend(op.color,'#37234f',.23));
-      ctx.fillStyle=gr;ctx.fill();break;
-    }
-    case 'ribbonTail':{
-      ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
-      ctx.bezierCurveTo(points[1].x,points[1].y,points[2].x,points[2].y,points[3].x,points[3].y);
-      ctx.lineWidth=.17*scale;ctx.strokeStyle='#5b278c50';ctx.stroke();
-      ctx.lineWidth=.13*scale;ctx.strokeStyle=op.color;ctx.stroke();break;
-    }
-    case 'ribbon':{
-      ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
-      ctx.bezierCurveTo(points[1].x,points[1].y,points[2].x,points[2].y,points[3].x,points[3].y);
-      ctx.quadraticCurveTo(points[4].x,points[4].y,points[0].x,points[0].y);
-      ctx.lineCap='round';ctx.lineJoin='round';
-      ctx.lineWidth=op.thickness*scale*1.18;ctx.strokeStyle='#603581a9';ctx.stroke();
-      ctx.lineWidth=op.thickness*scale*.80;ctx.strokeStyle=op.color;ctx.stroke();
-      break;
-    }
-    case 'tag':{
-      pathPoly(points);
-      ctx.shadowColor='#5433444d';ctx.shadowBlur=4;ctx.shadowOffsetY=3;
-      ctx.fillStyle='#fffaf1';ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-      ctx.lineWidth=1.2;ctx.strokeStyle='#e1d5cd';ctx.stroke();
-      const cx=points.reduce((s,p)=>s+p.x,0)/4,cy=points.reduce((s,p)=>s+p.y,0)/4;
-      ctx.save();ctx.translate(cx,cy);ctx.rotate(-.075);
-      ctx.font=`italic ${Math.max(8,Math.min(13,scale*.16))}px Georgia,serif`;
-      ctx.fillStyle='#95658f';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(op.text,0,1);
-      ctx.restore();break;
-    }
+ function addGeometry(bucketName,geometry){
+   const bucket=buckets[bucketName],positions=geometry.getAttribute('position');
+   const colors=geometry.getAttribute('color');
+   const offset=bucket.positions.length/3;
+   for(let i=0;i<positions.count;i++){
+     bucket.positions.push(positions.getX(i),positions.getY(i),positions.getZ(i));
+     bucket.colors.push(colors.getX(i),colors.getY(i),colors.getZ(i));
    }
+   const indices=geometry.index?.array;
+   if(indices){
+     for(const index of indices)bucket.indices.push(offset+index);
+   }else{
+     for(let i=0;i<positions.count;i++)bucket.indices.push(offset+i);
+   }
+   geometry.dispose();
+ }
+ function polygonGeometry(points,colorAt,withUv=false){
+   const polygon=[];
+   for(const point of points){
+     if(!polygon.length||Math.hypot(point[0]-polygon[polygon.length-1][0],
+       point[1]-polygon[polygon.length-1][1])>1e-8)polygon.push(point);
+   }
+   if(polygon.length>2&&Math.hypot(polygon[0][0]-polygon[polygon.length-1][0],
+     polygon[0][1]-polygon[polygon.length-1][1])<1e-8)polygon.pop();
+   if(polygon.length<3)return null;
+   const contour=polygon.map(point=>new THREE.Vector2(point[0],point[1]));
+   const triangles=THREE.ShapeUtils.triangulateShape(contour,[]);
+   if(!triangles.length)return null;
+   const geometry=new THREE.BufferGeometry(),positions=[],colors=[],uvs=[];
+   const xValues=polygon.map(point=>point[0]),yValues=polygon.map(point=>point[1]);
+   const minX=Math.min(...xValues),maxX=Math.max(...xValues);
+   const minY=Math.min(...yValues),maxY=Math.max(...yValues);
+   polygon.forEach((point,index)=>{
+     positions.push(point[0],point[1],point[2]);
+     const color=colorAt(point,index,polygon.length);
+     colors.push(color.r,color.g,color.b);
+     if(withUv)uvs.push((point[0]-minX)/(maxX-minX||1),(point[1]-minY)/(maxY-minY||1));
+   });
+   geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+   geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+   if(withUv)geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+   geometry.setIndex(triangles.flat());
+   geometry.computeVertexNormals();
+   return geometry;
+ }
+ function gradient(stops,amount){
+   const position=Math.max(0,Math.min(1,amount));
+   for(let i=1;i<stops.length;i++){
+     if(position<=stops[i][0]){
+       const [fromPosition,fromColor]=stops[i-1],[toPosition,toColor]=stops[i];
+       return colorMix(fromColor,toColor,(position-fromPosition)/(toPosition-fromPosition));
+     }
+   }
+   return new THREE.Color(stops[stops.length-1][1]);
+ }
+ function addPolygon(object){
+   const {type,opt,pts}=object;
+   if(type==='tag'){
+     const geometry=polygonGeometry(pts,()=>new THREE.Color('#fffaf1'),true);
+     if(!geometry)return;
+     const tag=document.createElement('canvas');
+     tag.width=256;tag.height=192;
+     const tagContext=tag.getContext('2d');
+     tagContext.fillStyle='#fffaf1';tagContext.fillRect(0,0,256,192);
+     tagContext.strokeStyle='#e1d5cd';tagContext.lineWidth=5;tagContext.strokeRect(4,4,248,184);
+     tagContext.fillStyle='#95658f';tagContext.font='italic 30px Georgia,serif';
+     tagContext.textAlign='center';tagContext.textBaseline='middle';tagContext.fillText(opt.text,128,96);
+     const texture=new THREE.CanvasTexture(tag);
+     texture.colorSpace=THREE.SRGBColorSpace;
+     bouquetYaw.add(new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({
+       map:texture,side:THREE.DoubleSide,toneMapped:false
+     })));
+     return;
+   }
+   const polygonPoints=type==='paper'
+     ?pts.map(([x,y,z])=>[x,y,z+(opt.shade==='kraft'?.06:-.25)]):pts;
+   const colorAt=(point,index,count)=>{
+     if(type==='paper'){
+       const amount=index/(count-1);
+       return opt.shade==='tissue'
+         ?gradient([[0,colorMix(opt.color,'#fef6fc',.26)],[.55,opt.color],[1,colorMix(opt.color,'#71578a',.20)]],amount)
+         :gradient([[0,colorMix(opt.color,'#ffecbc',.12+Math.abs(opt.brightness||0))],[.63,opt.color],[1,colorMix(opt.color,'#5a3a22',.09)]],amount);
+     }
+     if(type==='leaf'){
+       return gradient([[0,colorMix(opt.color,'#d4e8b0',.46)],[.55,opt.color],[1,colorMix(opt.color,'#285f40',.37)]],index/(count-1));
+     }
+     const base=new THREE.Vector3(...opt.base),tip=new THREE.Vector3(...opt.tip);
+     const pointVector=point3D(point).sub(base),direction=tip.sub(base);
+     const amount=Math.max(0,Math.min(1,pointVector.dot(direction)/direction.lengthSq()));
+     return opt.centerPetal
+       ?gradient([[0,'#fffef3'],[.32,'#fff9dd'],[.82,'#fbf7e8'],[1,'#fcfcf4']],amount)
+       :gradient([[0,colorMix(opt.color,'#492d82',.49)],[.32,opt.color],[.82,colorMix(opt.color,'#e2c6ff',.36)],[1,colorMix(opt.color,'#58349d',.10)]],amount);
+   };
+   const geometry=polygonGeometry(polygonPoints,colorAt);
+   if(geometry)addGeometry(type,geometry);
+ }
+ function createTube(points,radius,color,segments,radialSegments=5){
+   const curve=new THREE.CatmullRomCurve3(points.map(point3D));
+   const geometry=new THREE.TubeGeometry(curve,segments,radius,radialSegments,false);
+   setSolidColor(geometry,color);
+   return geometry;
+ }
+ function addStroke(points,color,radius){
+   const frontPoints=points.map(([x,y,z])=>[x,y,z+.07]);
+   addGeometry('paperStroke',createTube(frontPoints,radius,color,Math.max(8,points.length*2),4));
+ }
+ function addRibbon(object){
+   const {type,pts,opt}=object;
+   const points=pts.map(point3D);
+   if(type==='ribbonTail'){
+     const curve=new THREE.CubicBezierCurve3(...points);
+     const geometry=new THREE.TubeGeometry(curve,32,.085,6,false);
+     setSolidColor(geometry,'#5b278c');
+     addGeometry('ribbon',geometry);
+     const inner=new THREE.TubeGeometry(curve,32,.061,6,false);
+     setSolidColor(inner,opt.color);
+     addGeometry('ribbon',inner);
+     return;
+   }
+   const curve=new THREE.CurvePath();
+   curve.add(new THREE.CubicBezierCurve3(points[0],points[1],points[2],points[3]));
+   curve.add(new THREE.QuadraticBezierCurve3(points[3],points[4],points[0]));
+   const outline=new THREE.TubeGeometry(curve,48,opt.thickness*.56,7,false);
+   setSolidColor(outline,'#603581');
+   addGeometry('ribbon',outline);
+   const inner=new THREE.TubeGeometry(curve,48,opt.thickness*.39,7,false);
+   setSolidColor(inner,opt.color);
+   addGeometry('ribbon',inner);
+ }
+ function buildBouquet(){
+   const dotObjects=objects.filter(object=>object.type==='dot'||object.type==='bud');
+   const dots=new THREE.InstancedMesh(
+     new THREE.SphereGeometry(1,14,10),
+     new THREE.MeshLambertMaterial({color:0xffffff}),dotObjects.length
+   );
+   const transform=new THREE.Object3D();
+   dotObjects.forEach((object,index)=>{
+     const [x,y,z]=object.pts[0],size=object.opt.size;
+     transform.position.set(x,y,z);
+     transform.scale.set(size*(object.type==='bud'?.77:1),size,size);
+     transform.updateMatrix();
+     dots.setMatrixAt(index,transform.matrix);
+     dots.setColorAt(index,new THREE.Color(object.opt.color));
+   });
+   dots.instanceMatrix.needsUpdate=true;
+   if(dots.instanceColor)dots.instanceColor.needsUpdate=true;
+   bouquetYaw.add(dots);
+   objects.forEach(object=>{
+     if(object.type==='paper'||object.type==='leaf'||object.type==='petal'||object.type==='tag')
+       addPolygon(object);
+     else if(object.type==='stem')
+       addGeometry('stem',createTube(object.pts,object.opt.thickness/2,object.opt.color,20,5));
+     else if(object.type==='paperStroke')
+       addStroke(object.pts,object.opt.color,Math.max(.003,object.opt.thickness/2));
+     else if(object.type==='ribbon'||object.type==='ribbonTail')
+       addRibbon(object);
+   });
+   const surfaceMaterial=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});
+   for(const type of ['paper','leaf','petal','stem','ribbon']){
+     const bucket=buckets[type];
+     const geometry=new THREE.BufferGeometry();
+     geometry.setAttribute('position',new THREE.Float32BufferAttribute(bucket.positions,3));
+     geometry.setAttribute('color',new THREE.Float32BufferAttribute(bucket.colors,3));
+     geometry.setIndex(bucket.indices);
+     geometry.computeVertexNormals();
+     bouquetYaw.add(new THREE.Mesh(geometry,surfaceMaterial));
+   }
+   const strokes=buckets.paperStroke,strokeGeometry=new THREE.BufferGeometry();
+   strokeGeometry.setAttribute('position',new THREE.Float32BufferAttribute(strokes.positions,3));
+   strokeGeometry.setAttribute('color',new THREE.Float32BufferAttribute(strokes.colors,3));
+   strokeGeometry.setIndex(strokes.indices);
+   strokeGeometry.computeVertexNormals();
+   bouquetYaw.add(new THREE.Mesh(strokeGeometry,new THREE.MeshLambertMaterial({
+     vertexColors:true,side:THREE.DoubleSide,transparent:true,opacity:.38,depthWrite:false
+   })));
  }
  function resize(){
    const r=scene.getBoundingClientRect();w=r.width;h=r.height;
-   dpr=Math.min(window.devicePixelRatio||1,2);
-   for(const c of [canvas,fxCanvas]){c.width=Math.ceil(w*dpr);c.height=Math.ceil(h*dpr);c.style.width=w+'px';c.style.height=h+'px';}
-   ctx.setTransform(dpr,0,0,dpr,0,0);fx.setTransform(dpr,0,0,dpr,0,0);
+   dpr=Math.min(window.devicePixelRatio||1,1.5);
+   fxCanvas.width=Math.ceil(w*dpr);fxCanvas.height=Math.ceil(h*dpr);
+   fxCanvas.style.width=w+'px';fxCanvas.style.height=h+'px';
+   fx.setTransform(dpr,0,0,dpr,0,0);
    scale=Math.min(w/7.05,h/10.2);
-   offX=w*.50;offY=h*(w<500?.515:.52);
    if(w<390){scale*=.95;}
    if(w>900){scale=Math.min(scale,79);}
-   scene.querySelector('.floor-shadow').style.top=Math.min(h*.95,offY+4.68*scale+7)+'px';
+   camera.aspect=w/h;
+   camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(h/(2*scale*camera.position.z)));
+   const centerY=h*(w<500?.515:.52);
+   camera.position.y=(centerY-h*.5)/scale;
+   camera.lookAt(0,camera.position.y,0);
+   camera.updateProjectionMatrix();
+   renderer.setPixelRatio(dpr);
+   renderer.setSize(w,h,false);
+   scene.querySelector('.floor-shadow').style.top=Math.min(h*.95,centerY+4.68*scale+7)+'px';
    confetti.length=0;
-   let count=mobile?32:59;
+   const count=matchMedia('(pointer:coarse)').matches?32:59;
    for(let i=0;i<count;i++)confetti.push({
       x:uniform(0,w),y:uniform(0,h),r:uniform(1.7,5.2),vx:uniform(-.22,.20),
       vy:uniform(.22,.74),rot:uniform(0,6.28),vr:uniform(-.012,.012),alpha:uniform(.25,.72),
       color:rand()>.4?'#9b5aca':'#c6a3eb'
    });
+   drawConfetti();
  }
- function drawBouquet(t){
-   ctx.clearRect(0,0,w,h);
-   ctx.save();
-   // Slow sway also makes the volume of the flowers visible.
-   yaw+=(targetYaw-yaw)*.055;
-   pitch+=(targetPitch-pitch)*.055;
-   const sorted=objects.map(o=>{
-     const pts=o.pts.map(project);
-     return {o,pts,depth:pts.reduce((s,p)=>s+p.depth,0)/pts.length};
-   }).sort((a,b)=>a.depth-b.depth);
-   for(const item of sorted)renderObj(item.o,item.pts);
-   ctx.restore();
- }
- function drawConfetti(delta=16){
+ function drawConfetti(){
    fx.clearRect(0,0,w,h);
-   const rate=Math.min(2,delta/16);
    for(const p of confetti){
-      if(!reduceMotion){p.y+=p.vy*rate;p.x+=p.vx*rate+Math.sin(p.y*.013)*.09;
-       p.rot+=p.vr*rate;if(p.y>h+12){p.y=-10;p.x=uniform(0,w);}
-       if(p.x<0)p.x=w+5;if(p.x>w+5)p.x=0;
-      }
       fx.save();fx.globalAlpha=p.alpha;
       fx.translate(p.x,p.y);fx.rotate(p.rot);fx.scale(.5,1.3);
       fx.fillStyle=p.color;fx.beginPath();fx.ellipse(0,0,p.r*.65,p.r,Math.PI/4,0,6.283);fx.fill();
       fx.restore();
    }
  }
- function tick(time){
-   const interval=mobile?1000/30:1000/50;
-   if(!reduceMotion&&time-lastDraw<interval){requestAnimationFrame(tick);return;}
-   lastDraw=time;
-   let delta= Math.min(time-previous,40);previous=time;
-   if(!dragging&&!reduceMotion)targetYaw=Math.sin(time*.00032)*.11;
-   drawBouquet(time);drawConfetti(delta);
-   if(!reduceMotion||dragging||Math.abs(targetYaw-yaw)>.001||Math.abs(targetPitch-pitch)>.001)requestAnimationFrame(tick);
+ function renderFrame(){
+   animationFrame=null;
+   if(reduceMotion){
+     yaw=targetYaw;pitch=targetPitch;
+   }else{
+     yaw+=(targetYaw-yaw)*.24;
+     pitch+=(targetPitch-pitch)*.24;
+   }
+   bouquetPitch.rotation.x=pitch;
+   bouquetYaw.rotation.y=yaw;
+   renderer.render(threeScene,camera);
+   if(!reduceMotion&&(Math.abs(targetYaw-yaw)>.001||Math.abs(targetPitch-pitch)>.001))
+     scheduleRender();
+ }
+ function scheduleRender(){
+   if(animationFrame===null)animationFrame=requestAnimationFrame(renderFrame);
  }
  canvas.addEventListener('pointerdown',e=>{
    dragging=true;px=e.clientX;py=e.clientY;
@@ -530,15 +633,17 @@ body {font-family: Georgia, "Times New Roman", serif;background:#e8d9e5;touch-ac
    targetYaw=Math.max(-.66,Math.min(.66,targetYaw+(e.clientX-px)*.004));
    targetPitch=Math.max(-.17,Math.min(.17,targetPitch+(e.clientY-py)*.0018));
    px=e.clientX;py=e.clientY;
-   if(reduceMotion)requestAnimationFrame(tick);
+   scheduleRender();
  });
  for(const type of ['pointerup','pointercancel','lostpointercapture'])
    canvas.addEventListener(type,()=>{dragging=false;});
- window.addEventListener('resize',()=>{resize();if(reduceMotion)requestAnimationFrame(tick);},{passive:true});
+ window.addEventListener('resize',()=>{resize();scheduleRender();},{passive:true});
+ buildBouquet();
  resize();
- requestAnimationFrame(tick);
+ scheduleRender();
  // Screenreader motion and usage information.
 })();
+ }
 </script>
 </body>
 </html>

@@ -31,6 +31,16 @@
               {
                 "glob": "ramo_violetas_3d_responsive.html",
                 "input": "src/app"
+              },
+              {
+                "glob": "three.module.js",
+                "input": "node_modules/three/build",
+                "output": "vendor/three"
+              },
+              {
+                "glob": "three.core.js",
+                "input": "node_modules/three/build",
+                "output": "vendor/three"
               }
             ],
             "styles": [

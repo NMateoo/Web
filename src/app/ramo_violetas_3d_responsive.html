@@ -1,729 +1,855 @@
 <!doctype html>
 <html lang="es">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f1e4ef">
-<meta name="description" content="Un ramo de flores violetas en 3D con pétalos animados. Una postal interactiva para ti.">
-<title>Un ramo para ti · Flores violetas 3D</title>
-<style>
-  :root { color-scheme: light; --violet:#805593; }
-  * { box-sizing:border-box; }
-  html,body { margin:0; height:100%; width:100%; overflow:hidden; }
-  body { font-family:Georgia,'Times New Roman',serif; background:#f3e4ee; }
-  .scene {
-    position:relative; width:100%; height:100vh; height:100dvh;
-    min-height:420px; overflow:hidden; isolation:isolate;
-    background:
-      radial-gradient(ellipse 48% 34% at 49% 25%,rgba(255,255,255,.92),transparent 100%),
-      radial-gradient(ellipse 60% 48% at 16% 22%,rgba(255,239,253,.67),transparent 82%),
-      linear-gradient(180deg,#f3e6f0 0%,#ecd6e9 59%,#efdacf 60%,#f2dcc6 100%);
-  }
-  .scene::before {
-    content:""; position:absolute; inset:0 0 38%; pointer-events:none; z-index:0;
-    background:
-      radial-gradient(circle at 10% 12%,#fff9ff99 0 12px,transparent 14px),
-      radial-gradient(circle at 87% 17%,#fff8ff95 0 7px,transparent 10px),
-      radial-gradient(circle at 92% 52%,#fff8ffb5 0 11px,transparent 13px),
-      radial-gradient(circle at 26% 24%,#ffffff87 0 6px,transparent 8px),
-      radial-gradient(circle at 58% 9%,#fff6ff80 0 17px,transparent 20px);
-    filter:blur(2px);
-  }
-  .floor {
-    position:absolute; inset:59% 0 0; z-index:0;
-    background:linear-gradient(180deg,#f6e8d7 0%,#f0dbc1 52%,#e7caab 100%);
-    border-top:1px solid #ffffffa1;
-    box-shadow:0 -10px 30px #fff4e6a4;
-    overflow:hidden;
-  }
-  .floor::after {
-    content:""; position:absolute; inset:-45% -55%;
-    background:
-      repeating-linear-gradient(91deg, transparent 0 7%,#a47c5430 7.12%,#fff8e7a0 7.2%,transparent 7.28%,transparent 15.5%),
-      repeating-linear-gradient(0deg,transparent 0 97px,#b9967414 99px,#ffffff52 101px,transparent 102px);
-    transform:perspective(510px) rotateX(53deg) scale(1.28);
-    transform-origin:50% 0;
-    filter:blur(.6px);
-  }
-  .floor-shadow {
-    position:absolute; z-index:1; left:50%; top:89%; width:min(72vw,370px); height:38px;
-    transform:translate(-50%,-50%);
-    background:radial-gradient(ellipse,#553c4b38 0%,#734b6416 55%,transparent 76%);
-    filter:blur(13px); pointer-events:none;
-  }
-  #bouquet,#petals { position:absolute; inset:0; display:block; width:100%; height:100%; }
-  #bouquet { z-index:2; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
-  #bouquet:active { cursor:grabbing; }
-  #petals { z-index:4; pointer-events:none; }
-  .heading {
-    z-index:5; position:absolute; top:max(16px,env(safe-area-inset-top));
-    left:50%; transform:translateX(-50%); text-align:center;
-    pointer-events:none; white-space:nowrap;
-  }
-  .eyebrow { font:600 10px/1.5 system-ui,sans-serif; letter-spacing:.36em; color:#a98aa8; text-transform:uppercase; }
-  h1 { margin:4px 0 0; font-size:clamp(29px,4.4vw,41px); line-height:1.14;
-       font-weight:400; letter-spacing:.012em; color:#805b8b; text-shadow:0 1px 0 #fffbff; }
-  h1 span { color:#b583c9; font-size:.8em; }
-  .error {
-    position:absolute; z-index:6; left:6%; right:6%; top:48%; padding:16px;
-    border-radius:12px; text-align:center; background:#fffafaef; color:#79557c;
-    font:14px/1.6 system-ui,sans-serif;
-  }
-  [hidden] { display:none!important; }
-  @media(max-width:540px) {
-    .heading { top:max(20px,env(safe-area-inset-top) + 11px); }
-    .eyebrow { font-size:8px; }
-    h1 { font-size:clamp(24px,6.5vw,32px); }
-    .floor { top:60%; }
-  }
-  @media(max-height:600px) {
-    .heading { top:8px; }
-    h1 { font-size:24px; }
-  }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f1e4ef">
+  <meta name="description"
+    content="Un ramo de flores violetas en 3D con pétalos animados. Una postal interactiva para ti.">
+  <title>Esto por si no puedo dartelo</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --violet: #805593;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: #f3e4ee;
+    }
+
+    .scene {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      min-height: 420px;
+      overflow: hidden;
+      isolation: isolate;
+      background:
+        radial-gradient(ellipse 48% 34% at 49% 25%, rgba(255, 255, 255, .92), transparent 100%),
+        radial-gradient(ellipse 60% 48% at 16% 22%, rgba(255, 239, 253, .67), transparent 82%),
+        linear-gradient(180deg, #f3e6f0 0%, #ecd6e9 59%, #efdacf 60%, #f2dcc6 100%);
+    }
+
+    .scene::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 38%;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 10% 12%, #fff9ff99 0 12px, transparent 14px),
+        radial-gradient(circle at 87% 17%, #fff8ff95 0 7px, transparent 10px),
+        radial-gradient(circle at 92% 52%, #fff8ffb5 0 11px, transparent 13px),
+        radial-gradient(circle at 26% 24%, #ffffff87 0 6px, transparent 8px),
+        radial-gradient(circle at 58% 9%, #fff6ff80 0 17px, transparent 20px);
+      filter: blur(2px);
+    }
+
+    .floor {
+      position: absolute;
+      inset: 59% 0 0;
+      z-index: 0;
+      background: linear-gradient(180deg, #f6e8d7 0%, #f0dbc1 52%, #e7caab 100%);
+      border-top: 1px solid #ffffffa1;
+      box-shadow: 0 -10px 30px #fff4e6a4;
+      overflow: hidden;
+    }
+
+    .floor::after {
+      content: "";
+      position: absolute;
+      inset: -45% -55%;
+      background:
+        repeating-linear-gradient(91deg, transparent 0 7%, #a47c5430 7.12%, #fff8e7a0 7.2%, transparent 7.28%, transparent 15.5%),
+        repeating-linear-gradient(0deg, transparent 0 97px, #b9967414 99px, #ffffff52 101px, transparent 102px);
+      transform: perspective(510px) rotateX(53deg) scale(1.28);
+      transform-origin: 50% 0;
+      filter: blur(.6px);
+    }
+
+    .floor-shadow {
+      position: absolute;
+      z-index: 1;
+      left: 50%;
+      top: 89%;
+      width: min(72vw, 370px);
+      height: 38px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(ellipse, #553c4b38 0%, #734b6416 55%, transparent 76%);
+      filter: blur(13px);
+      pointer-events: none;
+    }
+
+    #bouquet,
+    #petals {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    #bouquet {
+      z-index: 2;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #bouquet:active {
+      cursor: grabbing;
+    }
+
+    #petals {
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .heading {
+      z-index: 5;
+      position: absolute;
+      top: max(16px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .eyebrow {
+      font: 600 10px/1.5 system-ui, sans-serif;
+      letter-spacing: .36em;
+      color: #a98aa8;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 4px 0 0;
+      font-size: clamp(29px, 4.4vw, 41px);
+      line-height: 1.14;
+      font-weight: 400;
+      letter-spacing: .012em;
+      color: #805b8b;
+      text-shadow: 0 1px 0 #fffbff;
+    }
+
+    h1 span {
+      color: #b583c9;
+      font-size: .8em;
+    }
+
+    .error {
+      position: absolute;
+      z-index: 6;
+      left: 6%;
+      right: 6%;
+      top: 48%;
+      padding: 16px;
+      border-radius: 12px;
+      text-align: center;
+      background: #fffafaef;
+      color: #79557c;
+      font: 14px/1.6 system-ui, sans-serif;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media(max-width:540px) {
+      .heading {
+        top: max(20px, env(safe-area-inset-top) + 11px);
+      }
+
+      .eyebrow {
+        font-size: 8px;
+      }
+
+      h1 {
+        font-size: clamp(24px, 6.5vw, 32px);
+      }
+
+      .floor {
+        top: 60%;
+      }
+    }
+
+    @media(max-height:600px) {
+      .heading {
+        top: 8px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<main class="scene" id="scene">
-  <div class="floor" aria-hidden="true"></div>
-  <div class="floor-shadow" id="floor-shadow" aria-hidden="true"></div>
-  <canvas id="bouquet" aria-label="Ramo de violetas, lavanda y pequeñas flores blancas. Arrastra para girarlo." role="img"></canvas>
-  <canvas id="petals" aria-hidden="true"></canvas>
-  <header class="heading"><div class="eyebrow">Un detalle especial</div><h1>Un ramo para ti <span>♡</span></h1></header>
-  <p class="error" id="error" hidden>No se pudo cargar Three.js. Comprueba tu conexión o coloca <strong>three.module.js</strong> en <strong>vendor/three/</strong>.</p>
-</main>
-<script type="module">
-// Intenta usar la copia local del proyecto original y, si no existe, una CDN.
-let THREE;
-try {
-  THREE = await import('./vendor/three/three.module.js');
-} catch (localError) {
-  try {
-    THREE = await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js');
-  } catch (cdnError) {
-    console.error('Three.js no disponible', {localError,cdnError});
-    document.getElementById('error').hidden=false;
-  }
-}
-if (THREE) {
-(() => {
-  'use strict';
-  const canvas=document.getElementById('bouquet');
-  const fxCanvas=document.getElementById('petals');
-  const fx=fxCanvas.getContext('2d',{alpha:true});
-  const container=document.getElementById('scene');
-  const shadow=document.getElementById('floor-shadow');
-  const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let seed=42731;
-  function random() { seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296; }
-  const r=(a,b)=>a+(b-a)*random();
-  const choose=arr=>arr[Math.floor(random()*arr.length)];
-  const vec=(x,y,z)=>new THREE.Vector3(x,y,z);
-  const lerp=(a,b,t)=>a+(b-a)*t;
-  const clamp=THREE.MathUtils.clamp;
-  const scene=new THREE.Scene();
-  const camera=new THREE.OrthographicCamera(-5,5,5,-5,.1,100);
-  camera.position.set(0,0,18);
-  camera.lookAt(0,0,0);
-  let renderer;
-  try {
-    renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'default'});
-  } catch (error) { console.error(error); document.getElementById('error').hidden=false; return; }
-  renderer.setClearColor(0xffffff,0);
-  renderer.outputColorSpace=THREE.SRGBColorSpace;
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure=1.3;
-  // Luz suave y abundante: no se proyectan sombras negras sobre los pétalos.
-  scene.add(new THREE.HemisphereLight(0xfff7ff,0xc2aaac,1.85));
-  const key=new THREE.DirectionalLight(0xfffaf5,2.25); key.position.set(-3,7,9);scene.add(key);
-  const fill=new THREE.DirectionalLight(0xf0ddff,1.12); fill.position.set(5,3,-5);scene.add(fill);
-  const front=new THREE.DirectionalLight(0xffffff,.55);front.position.set(3,1,12);scene.add(front);
-  const bouquet=new THREE.Group();scene.add(bouquet);bouquet.position.y=-.28;
-  const moving=new THREE.Group();bouquet.add(moving);
-  const color=c=>new THREE.Color(c);
-  const petalPalette=['#b17ce5','#a36cda','#be94eb','#9163d0','#ac81df','#cca6ee','#9c6cd6','#bc8fe8'];
-  const petalMaterial=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:.78,metalness:0,emissive:0x36174f,emissiveIntensity:.08});
-  const leafMaterial=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:.87});
-  const yellowMat=new THREE.MeshStandardMaterial({color:0xfbd77f,roughness:.53,emissive:0xffc45c,emissiveIntensity:.13});
-  const pollenMat=new THREE.MeshStandardMaterial({color:0xfff2bc,roughness:.5,emissive:0xffe09c,emissiveIntensity:.18});
-  const creamMat=new THREE.MeshStandardMaterial({color:0xfff9e6,roughness:.77,emissive:0xffffff,emissiveIntensity:.05});
-  const stemMat=new THREE.MeshStandardMaterial({color:0x608c67,roughness:.96});
-  const stemDark=new THREE.MeshStandardMaterial({color:0x447e58,roughness:.94});
-  const whiteMat=new THREE.MeshStandardMaterial({color:0xfffcf6,roughness:.76,emissive:0xffffff,emissiveIntensity:.12});
-  const pinkMat=new THREE.MeshStandardMaterial({color:0xf7b9d9,roughness:.76,emissive:0xe8a0cc,emissiveIntensity:.07});
-  const sphere=new THREE.SphereGeometry(1,16,12);
-  const sphereSmall=new THREE.SphereGeometry(1,10,8);
-
-  function meshSphere(parent,at,scale,material,geo=sphere){
-    const m=new THREE.Mesh(geo,material);m.position.copy(at);
-    m.scale.set(...(typeof scale==='number'?[scale,scale,scale]:scale));
-    parent.add(m);return m;
-  }
-  function tube(parent,points,radius,material,segments=15){
-    const curve=new THREE.CatmullRomCurve3(points);
-    const m=new THREE.Mesh(new THREE.TubeGeometry(curve,segments,radius,6,false),material);
-    parent.add(m);return m;
-  }
-  function colorsOnPetal(base,at,across,kind){
-    const c=color(base);
-    const pale=color(kind==='white'?'#ffffff':'#f7dcff');
-    const dark=color(kind==='white'?'#e6cbeb':'#6d389e');
-    // Raíz más intensa; extremos y bordes claros, como pétalos iluminados.
-    c.lerp(dark,.15*(1-at));
-    c.lerp(pale,.08+.17*at+.13*Math.abs(across));
-    return c;
-  }
-  function petalGeometry(base,kind,petalNo){
-    const long=16,across=10;
-    const p=[],c=[],idx=[];
-    for(let i=0;i<=long;i++){
-      const t=i/long;
-      const radial=.09+.75*t;
-      const width=(kind==='slim'?.23:.30)*Math.pow(Math.sin(Math.PI*t),.74)*(1+.09*Math.sin(petalNo*1.7));
-      for(let j=0;j<=across;j++){
-        const s=j/across*2-1;
-        const x=s*width + .025*Math.sin(Math.PI*t)*Math.cos(petalNo*2.1);
-        const y=radial;
-        const z=.035+.24*Math.sin(Math.PI*t)*(1-.49*s*s)-.085*t*t+.026*s*t;
-        p.push(x,y,z);
-        const cc=colorsOnPetal(base,t,s,kind);
-        c.push(cc.r,cc.g,cc.b);
+  <main class="scene" id="scene">
+    <div class="floor" aria-hidden="true"></div>
+    <div class="floor-shadow" id="floor-shadow" aria-hidden="true"></div>
+    <canvas id="bouquet" aria-label="Ramo de violetas, lavanda y pequeñas flores blancas. Arrastra para girarlo."
+      role="img"></canvas>
+    <canvas id="petals" aria-hidden="true"></canvas>
+    <header class="heading">
+      <div class="eyebrow">Un detalle especial</div>
+      <h1>Un ramo para ti <span>♡</span></h1>
+    </header>
+    <p class="error" id="error" hidden>No se pudo cargar Three.js. Comprueba tu conexión o coloca
+      <strong>three.module.js</strong> en <strong>vendor/three/</strong>.</p>
+  </main>
+  <script type="module">
+    // Intenta usar la copia local del proyecto original y, si no existe, una CDN.
+    let THREE;
+    try {
+      THREE = await import('./vendor/three/three.module.js');
+    } catch (localError) {
+      try {
+        THREE = await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js');
+      } catch (cdnError) {
+        console.error('Three.js no disponible', { localError, cdnError });
+        document.getElementById('error').hidden = false;
       }
     }
-    for(let i=0;i<long;i++)for(let j=0;j<across;j++){
-      const a=i*(across+1)+j,b=a+across+1;
-      idx.push(a,b,a+1,b,b+1,a+1);
-    }
-    const geometry=new THREE.BufferGeometry();
-    geometry.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
-    geometry.setAttribute('color',new THREE.Float32BufferAttribute(c,3));
-    geometry.setIndex(idx);geometry.computeVertexNormals();
-    return geometry;
-  }
-  const palettePetals=petalPalette.map((hex,i)=>petalGeometry(hex,'round',i));
-  const slenderPetals=petalPalette.map((hex,i)=>petalGeometry(hex,'slim',i));
-  const ivoryPetal=petalGeometry('#fff4e8','white',0);
-  const centers=new THREE.SphereGeometry(1,18,12);
-  // Los pétalos y las flores pequeñas comparten geometría (InstancedMesh).
-  // Esto evita cientos de llamadas de dibujo en móviles.
-  const batches=new Map();
-  const zAxis=vec(0,0,1),xAxis=vec(1,0,0);
-  function addInstance(key,geometry,material,position,scale,quaternion=null){
-    let batch=batches.get(key);
-    if(!batch){batch={geometry,material,matrices:[]};batches.set(key,batch);}
-    const object=new THREE.Object3D();
-    object.position.copy(position);
-    if(quaternion)object.quaternion.copy(quaternion);
-    if(typeof scale==='number')object.scale.setScalar(scale);
-    else object.scale.copy(scale);
-    object.updateMatrix();batch.matrices.push(object.matrix.clone());
-  }
-  function flushInstances(){
-    for(const batch of batches.values()){
-      const im=new THREE.InstancedMesh(batch.geometry,batch.material,batch.matrices.length);
-      for(let i=0;i<batch.matrices.length;i++)im.setMatrixAt(i,batch.matrices[i]);
-      im.instanceMatrix.needsUpdate=true;
-      im.frustumCulled=false;
-      moving.add(im);
-    }
-    batches.clear();
-  }
-  function blossom(position,normal,size,paletteIndex,type='violet'){
-    const count=type==='star'?6:type==='simple4'?4:5;
-    const baseQ=new THREE.Quaternion().setFromUnitVectors(zAxis,normal.clone().normalize());
-    baseQ.multiply(new THREE.Quaternion().setFromAxisAngle(zAxis,r(-.48,.48)));
-    const pansyScales=[1.12,1.08,.88,1.28,1.24];
-    for(let j=0;j<count;j++){
-      const index=(paletteIndex+j%3)%petalPalette.length;
-      const q=baseQ.clone().multiply(new THREE.Quaternion().setFromAxisAngle(zAxis,j*2*Math.PI/count));
-      q.multiply(new THREE.Quaternion().setFromAxisAngle(xAxis,.06*Math.sin(j+paletteIndex)));
-      const geo=(type==='star'?slenderPetals:palettePetals)[index];
-      let scale=size;
-      if(type==='simple4') scale=vec(.83*size,.83*size,.83*size);
-      if(type==='pansy') scale=vec(size*pansyScales[j],size*(j<2?.92:1.08),size*pansyScales[j]);
-      addInstance((type==='star'?'slim-':'round-')+index,geo,petalMaterial,position,scale,q);
-    }
-    if(type!=='star'&&type!=='simple4') for(let j=0;j<5;j++){
-      const q=baseQ.clone().multiply(new THREE.Quaternion().setFromAxisAngle(zAxis,j*Math.PI*2/5));
-      const p=position.clone().add(vec(0,0,.13*size).applyQuaternion(baseQ));
-      addInstance('ivory',ivoryPetal,petalMaterial,p,vec(.20*size,.28*size,.54*size),q);
-    }
-    const centerScale=type==='simple4'?.075:type==='pansy'?.102:.117;
-    addInstance('center',centers,yellowMat,
-      position.clone().add(vec(0,0,(type==='simple4'?.12:.22)*size).applyQuaternion(baseQ)),centerScale*size);
-    const pollenCount=type==='simple4'?4:5;
-    for(let j=0;j<pollenCount;j++){
-      const a=j*Math.PI*2/pollenCount;
-      const pollen=vec(.083*Math.cos(a),.083*Math.sin(a),type==='simple4'?.18:.31).multiplyScalar(size).applyQuaternion(baseQ);
-      addInstance('pollen',sphereSmall,pollenMat,position.clone().add(pollen),.028*size);
-    }
-  }
+    if (THREE) {
+      (() => {
+        'use strict';
+        const canvas = document.getElementById('bouquet');
+        const fxCanvas = document.getElementById('petals');
+        const fx = fxCanvas.getContext('2d', { alpha: true });
+        const container = document.getElementById('scene');
+        const shadow = document.getElementById('floor-shadow');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let seed = 42731;
+        function random() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+        const r = (a, b) => a + (b - a) * random();
+        const choose = arr => arr[Math.floor(random() * arr.length)];
+        const vec = (x, y, z) => new THREE.Vector3(x, y, z);
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const clamp = THREE.MathUtils.clamp;
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(-5, 5, 5, -5, .1, 100);
+        camera.position.set(0, 0, 18);
+        camera.lookAt(0, 0, 0);
+        let renderer;
+        try {
+          renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'default' });
+        } catch (error) { console.error(error); document.getElementById('error').hidden = false; return; }
+        renderer.setClearColor(0xffffff, 0);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.3;
+        // Luz suave y abundante: no se proyectan sombras negras sobre los pétalos.
+        scene.add(new THREE.HemisphereLight(0xfff7ff, 0xc2aaac, 1.85));
+        const key = new THREE.DirectionalLight(0xfffaf5, 2.25); key.position.set(-3, 7, 9); scene.add(key);
+        const fill = new THREE.DirectionalLight(0xf0ddff, 1.12); fill.position.set(5, 3, -5); scene.add(fill);
+        const front = new THREE.DirectionalLight(0xffffff, .55); front.position.set(3, 1, 12); scene.add(front);
+        const bouquet = new THREE.Group(); scene.add(bouquet); bouquet.position.y = -.28;
+        const moving = new THREE.Group(); bouquet.add(moving);
+        const color = c => new THREE.Color(c);
+        const petalPalette = ['#b17ce5', '#a36cda', '#be94eb', '#9163d0', '#ac81df', '#cca6ee', '#9c6cd6', '#bc8fe8'];
+        const petalMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .78, metalness: 0, emissive: 0x36174f, emissiveIntensity: .08 });
+        const leafMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .87 });
+        const yellowMat = new THREE.MeshStandardMaterial({ color: 0xfbd77f, roughness: .53, emissive: 0xffc45c, emissiveIntensity: .13 });
+        const pollenMat = new THREE.MeshStandardMaterial({ color: 0xfff2bc, roughness: .5, emissive: 0xffe09c, emissiveIntensity: .18 });
+        const creamMat = new THREE.MeshStandardMaterial({ color: 0xfff9e6, roughness: .77, emissive: 0xffffff, emissiveIntensity: .05 });
+        const stemMat = new THREE.MeshStandardMaterial({ color: 0x608c67, roughness: .96 });
+        const stemDark = new THREE.MeshStandardMaterial({ color: 0x447e58, roughness: .94 });
+        const whiteMat = new THREE.MeshStandardMaterial({ color: 0xfffcf6, roughness: .76, emissive: 0xffffff, emissiveIntensity: .12 });
+        const pinkMat = new THREE.MeshStandardMaterial({ color: 0xf7b9d9, roughness: .76, emissive: 0xe8a0cc, emissiveIntensity: .07 });
+        const sphere = new THREE.SphereGeometry(1, 16, 12);
+        const sphereSmall = new THREE.SphereGeometry(1, 10, 8);
 
-  function layeredBloom(center,size,paletteIndex,layers=3){
-    for(let i=0;i<layers;i++){
-      const offset=vec(r(-.03,.03),r(-.03,.03),i*.07*size);
-      const s=size*(.48+.18*i);
-      blossom(center.clone().add(offset),vec(r(-.08,.08),r(-.02,.22),1).normalize(),s,paletteIndex+i,'violet');
-    }
-  }
-
-  function hydrangea(center,radius=0.62,flowers=16){
-    const ga=Math.PI*(3-Math.sqrt(5));
-    for(let i=0;i<flowers;i++){
-      const y=1-2*(i+.5)/flowers;
-      const rr=Math.sqrt(Math.max(0,1-y*y));
-      const a=i*ga;
-      const off=vec(Math.cos(a)*rr*radius, y*.48*radius, Math.sin(a)*rr*radius*.74);
-      const pos=center.clone().add(off);
-      blossom(pos,off.clone().normalize().add(vec(0,.15,.35)).normalize(),r(.18,.25),Math.floor(random()*petalPalette.length),'simple4');
-      tube(moving,[center.clone().add(vec(0,-.08,0)),center.clone().add(off.clone().multiplyScalar(.55)),pos],.008,stemMat,8);
-    }
-  }
-
-  function bellGeometry(){
-    const pts=[];
-    [[0.04,0],[0.06,0.05],[0.16,0.18],[0.25,0.34],[0.22,0.6],[0.15,0.85],[0.06,1.0],[0.0,1.02]].forEach(([x,y])=>pts.push(new THREE.Vector2(x,y)));
-    const g=new THREE.LatheGeometry(pts,26);
-    g.rotateX(Math.PI);
-    g.translate(0,-.5,0);
-    return g;
-  }
-  const bellGeo=bellGeometry();
-  const bellMats=['#8e59cf','#a778de','#7f4dbd'].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.68,emissive:0x51327b,emissiveIntensity:.08}));
-  function bellFlower(anchor,scale=1,matIndex=0,tilt=-.55){
-    const bell=new THREE.Mesh(bellGeo,bellMats[matIndex%bellMats.length]);
-    bell.position.copy(anchor);
-    bell.scale.setScalar(.72*scale);
-    bell.rotation.z=tilt;
-    bell.rotation.x=.18;
-    moving.add(bell);
-    tube(moving,[anchor.clone().add(vec(.02,.38*scale,-.03)),anchor.clone().add(vec(.11,.18*scale,.03)),anchor.clone().add(vec(0,.01,0))],.013,stemMat,9);
-    for(let i=0;i<4;i++){
-      const bead=new THREE.Mesh(sphereSmall,pollenMat);
-      bead.position.copy(anchor).add(vec(r(-.03,.03),-.22*scale+r(-.02,.02),r(-.03,.03)));
-      bead.scale.setScalar(.025*scale);
-      moving.add(bead);
-    }
-  }
-
-  function bud(anchor,dir,size=.16){
-    const mat=bellMats[Math.floor(random()*bellMats.length)];
-    const budMesh=new THREE.Mesh(sphereSmall,mat);
-    budMesh.position.copy(anchor);
-    budMesh.scale.set(size*.65,size*1.22,size*.65);
-    budMesh.quaternion.setFromUnitVectors(zAxis,dir.clone().normalize());
-    moving.add(budMesh);
-    tube(moving,[anchor.clone().addScaledVector(dir,-.42*size),anchor.clone().addScaledVector(dir,-.16*size),anchor],.008,stemMat,7);
-  }
-
-  // Flores principales con composición más parecida al ramo de referencia.
-  blossom(vec(0.00,1.96,1.28),vec(0,.05,1),.86,2,'violet');
-  blossom(vec(-.82,2.28,1.20),vec(-.22,.03,.98),.80,1,'pansy');
-  layeredBloom(vec(.38,3.15,.68),.72,4,3);
-  layeredBloom(vec(-1.44,1.74,1.08),.58,5,2);
-  blossom(vec(-1.26,3.05,.82),vec(-.12,.22,.97),.54,6,'star');
-  hydrangea(vec(1.72,2.36,.92),.68,18);
-  bellFlower(vec(1.24,2.88,.78),.76,1,-.66);
-  bellFlower(vec(1.55,2.76,.64),.67,0,-.48);
-  bellFlower(vec(1.05,2.66,1.01),.62,2,-.58);
-
-  // Filler 3D alrededor para mantener volumen al girar, pero sin uniformidad artificial.
-  const flowerCount=42;
-  const goldenAngle=Math.PI*(3-Math.sqrt(5));
-  for(let i=0;i<flowerCount;i++){
-    const lat=.92-1.84*(i+.5)/flowerCount;
-    const ring=Math.sqrt(Math.max(0,1-lat*lat));
-    const a=i*goldenAngle;
-    const xx=Math.cos(a)*ring,zz=Math.sin(a)*ring;
-    const pos=vec(xx*1.95,2.42+lat*1.08,zz*1.15);
-    if(pos.z>.88&&Math.abs(pos.x)<1.05&&pos.y<2.65) continue; // deja sitio a las flores protagonistas.
-    pos.x+=r(-.08,.08);pos.y+=r(-.08,.08);pos.z+=r(-.06,.06);
-    const facing=vec(xx*.64,lat*.48+.12,zz*.88+.28).normalize();
-    const mode=i%11===0?'star':(i%9===0?'pansy':'violet');
-    blossom(pos,facing,r(.34,.53)*(mode==='star'?.84:1),Math.floor(random()*petalPalette.length),mode);
-    const attach=vec(pos.x*.12,r(.48,.92),pos.z*.10);
-    tube(moving,[attach,vec(pos.x*.26,1.38,pos.z*.22),vec(pos.x*.54,1.98,pos.z*.42),pos],.010,i%4?stemMat:stemDark,14);
-  }
-
-  // Hojas pequeñas, cerca de la masa floral.
-  function makeLeafGeometry(base){
-    const p=[],c=[],idx=[],N=12,M=6;
-    for(let i=0;i<=N;i++){
-      const t=i/N;
-      const width=.21*Math.pow(Math.sin(Math.PI*t),.84);
-      for(let j=0;j<=M;j++){
-        const s=j/M*2-1;
-        p.push(s*width,.65*t,.09*Math.sin(Math.PI*t)*(1-s*s));
-        const cc=color(base).lerp(color(s>0?'#c5e1a2':'#276b52'),.2+.14*Math.abs(s));
-        c.push(cc.r,cc.g,cc.b);
-      }
-    }
-    for(let i=0;i<N;i++)for(let j=0;j<M;j++){
-      const a=i*(M+1)+j,b=a+M+1;idx.push(a,b,a+1,b,b+1,a+1);
-    }
-    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
-    g.setAttribute('color',new THREE.Float32BufferAttribute(c,3));g.setIndex(idx);g.computeVertexNormals();return g;
-  }
-  const leafGeo=['#568b70','#76a787','#4b916b'].map(makeLeafGeometry);
-  for(let i=0;i<46;i++){
-    const az=r(0,Math.PI*2),height=r(1.7,3.34),distance=r(.82,1.86);
-    const leaf=new THREE.Mesh(choose(leafGeo),leafMaterial);
-    leaf.position.set(Math.cos(az)*distance,height,Math.sin(az)*distance*.72);
-    leaf.rotation.z=-az+Math.PI/2+r(-.35,.35);
-    leaf.rotation.y=r(-.65,.65);
-    leaf.scale.setScalar(r(.34,.74));moving.add(leaf);
-  }
-
-  // Lavanda integrada arriba y hacia atrás.
-  const lavenderMaterials=['#9565cc','#a979d8','#8058bf','#bd92e4'].map(x=>
-    new THREE.MeshStandardMaterial({color:x,roughness:.78,emissive:0x542f83,emissiveIntensity:.09}));
-  function lavender(start,tip){
-    const stemPoints=[start,vec(lerp(start.x,tip.x,.55),lerp(start.y,tip.y,.55),lerp(start.z,tip.z,.55)),tip];
-    tube(moving,stemPoints,.012,stemMat,18);
-    const spikeHeight=.58;
-    for(let row=0;row<16;row++){
-      const t=row/15;
-      const by=tip.y-spikeHeight*(1-t);
-      const radius=.095*Math.pow(1-t,.65)+.014;
-      for(let j=0;j<3;j++){
-        const a=j*Math.PI*2/3+row*1.54;
-        const pt=vec(tip.x+Math.cos(a)*radius,by,tip.z+Math.sin(a)*radius);
-        const matIndex=(row+j)%lavenderMaterials.length;
-        addInstance('lavender-'+matIndex,sphereSmall,lavenderMaterials[matIndex],pt,
-          vec(.058*(1-.36*t),.078*(1-.29*t),.060));
-      }
-    }
-  }
-  for(let i=0;i<9;i++){
-    const a=-1.22+i*(2.44/8);
-    const x=Math.cos(a)*r(1.22,1.88),z=Math.sin(a)*r(.48,.92)-.12;
-    const top=vec(x,3.84+r(.08,.52),z);
-    lavender(vec(x*.18,2.08,z*.18),top);
-  }
-
-  // Flores diminutas blancas y algunos acentos rosados.
-  function babyBreath(base,pink=false){
-    const tip=base.clone().add(vec(r(-.09,.09),r(.14,.32),r(-.04,.14)));
-    tube(moving,[base,base.clone().lerp(tip,.52),tip],.007,stemMat,8);
-    for(let j=0;j<5;j++){
-      const a=j*Math.PI*2/5;
-      const point=tip.clone().add(vec(Math.cos(a)*.095,Math.sin(a)*.068,r(-.02,.06)));
-      addInstance(pink?'pink-baby':'white-baby',sphereSmall,pink?pinkMat:whiteMat,point,.043);
-    }
-    addInstance('baby-pollen',sphereSmall,pollenMat,tip,.028);
-  }
-  for(let i=0;i<24;i++){
-    const a=i*goldenAngle;
-    const x=Math.cos(a)*r(.7,1.95),z=Math.sin(a)*r(.35,1.08);
-    const y=r(1.98,3.54);
-    babyBreath(vec(x,y,z),i%8===0);
-  }
-
-  // Algunos capullos para dar variedad vertical sin que salgan tallos sueltos.
-  for(let i=0;i<12;i++){
-    const a=-1.15+i*(2.3/11);
-    const pos=vec(Math.cos(a)*r(.72,1.75),r(2.7,3.55),Math.sin(a)*r(.28,.78)+r(-.1,.1));
-    bud(pos,vec(r(-.15,.15),1,r(-.08,.08)),r(.12,.19));
-  }
-
-  // Envoltorio completamente cerrado en 360º, con pliegues suaves.
-  const paperColor=color('#c69a68');
-  const paperLight=color('#f2d3a0');
-  const paperDark=color('#a7784b');
-  function paperGeometry(tissue=false){
-    const seg=160,rows=tissue?14:32;
-    const positions=[],colors=[],uv=[],indices=[];
-    for(let j=0;j<=rows;j++){
-      const t=j/rows;
-      for(let i=0;i<=seg;i++){
-        const angle=i/seg*Math.PI*2;
-        const crease=Math.cos(9*angle+.36)*.058+Math.sin(17*angle-.4)*.018;
-        let rad,y;
-        if(tissue){
-          const topY=1.68+.15*Math.sin(6*angle-.7)+.07*Math.sin(11*angle+.3);
-          y=lerp(topY,.66,t);
-          rad=lerp(2.15,1.62,t)*(1+crease*.55);
-        }else{
-          const topY=1.38+.18*Math.sin(7*angle+.45)+.075*Math.sin(13*angle);
-          y=lerp(topY,-2.72,t);
-          rad=lerp(2.21,.25,t)*(1+crease*(1-.54*t));
-          rad+=.065*Math.sin(t*Math.PI)*Math.sin(7*angle+.3);
+        function meshSphere(parent, at, scale, material, geo = sphere) {
+          const m = new THREE.Mesh(geo, material); m.position.copy(at);
+          m.scale.set(...(typeof scale === 'number' ? [scale, scale, scale] : scale));
+          parent.add(m); return m;
         }
-        // Una sola superficie con radio constante: sin paneles angulares visibles.
-        const xx=Math.cos(angle)*rad;
-        const zz=Math.sin(angle)*rad*.91;
-        positions.push(xx,y,zz);
-        const base=tissue?color('#e3c5e8'):paperColor.clone();
-        const amount=.5+.5*Math.sin(9*angle+.2);
-        if(tissue){base.lerp(color('#fff1fb'),.08+.13*(1-t)+.10*amount);}
-        else {
-          base.lerp(paperLight,.10+.16*amount+.06*(1-t));
-          base.lerp(paperDark,.045+.09*(1-amount)+.07*t);
-          base.multiplyScalar(1+r(-.012,.012));
+        function tube(parent, points, radius, material, segments = 15) {
+          const curve = new THREE.CatmullRomCurve3(points);
+          const m = new THREE.Mesh(new THREE.TubeGeometry(curve, segments, radius, 6, false), material);
+          parent.add(m); return m;
         }
-        colors.push(base.r,base.g,base.b);
-        uv.push(i/seg,j/rows);
-      }
-    }
-    for(let j=0;j<rows;j++)for(let i=0;i<seg;i++){
-      const a=j*(seg+1)+i,b=a+seg+1;
-      indices.push(a,a+1,b,b,a+1,b+1);
-    }
-    const geometry=new THREE.BufferGeometry();
-    geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
-    geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-    geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
-    geometry.setIndex(indices);geometry.computeVertexNormals();return geometry;
-  }
-  const tissue=new THREE.Mesh(paperGeometry(true),new THREE.MeshStandardMaterial({
-    vertexColors:true,side:THREE.DoubleSide,transparent:true,opacity:.89,
-    roughness:.95,metalness:0,depthWrite:true,emissive:0x58305d,emissiveIntensity:.025
-  }));
-  bouquet.add(tissue);
-  const wrapper=new THREE.Mesh(paperGeometry(false),new THREE.MeshStandardMaterial({
-    vertexColors:true,side:THREE.DoubleSide,roughness:1,metalness:0,
-    emissive:0x72471e,emissiveIntensity:.025
-  }));
-  bouquet.add(wrapper);
-  // Borde fino visible sobre la abertura; la base es redonda, no una lámina plana.
-  function circularRim(y,radius,material){
-    const p=[];for(let i=0;i<=128;i++){
-      const a=i/128*2*Math.PI;
-      p.push(vec(Math.cos(a)*radius*(1+.05*Math.cos(9*a+.36)),
-        y+.18*Math.sin(7*a+.45)+.075*Math.sin(13*a),
-        Math.sin(a)*radius*.91*(1+.05*Math.cos(9*a+.36))));
-    }
-    tube(bouquet,p,.024,material,150);
-  }
-  const paperRimMat=new THREE.MeshStandardMaterial({color:0xd9b48b,roughness:1});
-  circularRim(1.38,2.21,paperRimMat);
-
-  // Tallos inferiores: haces compactos y rectos, sin brotes laterales.
-  for(let i=0;i<30;i++){
-    const a=i*goldenAngle;
-    const radius=r(.01,.15);
-    const x=Math.cos(a)*radius,z=Math.sin(a)*radius*.62;
-    tube(bouquet,[vec(x,-2.54,z),vec(x*1.05,-3.22,z*.96),vec(x*1.10,-4.00+r(-.06,.04),z*.92)],
-      r(.012,.021),i%4===0?stemDark:stemMat,10);
-  }
-
-  // Lazo tridimensional. Cada cinta tiene curvatura, dos caras y cantos con grosor.
-  const ribbonMaterial=new THREE.MeshStandardMaterial({
-    vertexColors:true,roughness:.30,metalness:.06,
-    side:THREE.DoubleSide,emissive:0x371253,emissiveIntensity:.06
-  });
-  const ribbonBase=color('#8d43c6'), ribbonLight=color('#d5a2f2'), ribbonDeep=color('#60258c');
-
-  function ribbonStrip(points,width,{thickness=.045,twist=.22,loose=false}={}){
-    const curve=new THREE.CatmullRomCurve3(points,false,'centripetal');
-    const segments=88, across=8, positions=[],colors=[],indices=[];
-    const up=vec(0,0,1);
-    for(let layer=0;layer<2;layer++){
-      for(let i=0;i<=segments;i++){
-        const t=i/segments;
-        const center=curve.getPoint(t);
-        const tangent=curve.getTangent(t).normalize();
-        const lateral=vec(-tangent.y,tangent.x,0).normalize();
-        lateral.applyAxisAngle(tangent,twist*Math.sin(t*Math.PI*1.8));
-        const widthAt=width*(loose?.87+.13*Math.sin(t*Math.PI):.78+.22*Math.sin(t*Math.PI));
-        for(let j=0;j<=across;j++){
-          const u=j/across*2-1;
-          const bent=loose?.04:.065;
-          const puff=bent*(1-u*u)*Math.sin(Math.PI*t);
-          const pt=center.clone()
-            .addScaledVector(lateral,u*widthAt*.5)
-            .addScaledVector(up,puff+(layer===0?thickness*.5:-thickness*.5));
-          positions.push(pt.x,pt.y,pt.z);
-          const shade=ribbonBase.clone()
-            .lerp(ribbonLight,.12+.28*(1-u*u)+.13*Math.sin(t*Math.PI*2)**2)
-            .lerp(ribbonDeep,(u*u)*.13+(layer===1?.14:0));
-          colors.push(shade.r,shade.g,shade.b);
+        function colorsOnPetal(base, at, across, kind) {
+          const c = color(base);
+          const pale = color(kind === 'white' ? '#ffffff' : '#f7dcff');
+          const dark = color(kind === 'white' ? '#e6cbeb' : '#6d389e');
+          // Raíz más intensa; extremos y bordes claros, como pétalos iluminados.
+          c.lerp(dark, .15 * (1 - at));
+          c.lerp(pale, .08 + .17 * at + .13 * Math.abs(across));
+          return c;
         }
-      }
-    }
-    const stride=(segments+1)*(across+1);
-    for(let layer=0;layer<2;layer++){
-      const offset=layer*stride;
-      for(let i=0;i<segments;i++)for(let j=0;j<across;j++){
-        const a=offset+i*(across+1)+j,b=a+across+1;
-        if(layer===0)indices.push(a,a+1,b,a+1,b+1,b);
-        else indices.push(a,b,a+1,a+1,b,b+1);
-      }
-    }
-    for(let i=0;i<segments;i++){
-      for(const edge of [0,across]){
-        const a=i*(across+1)+edge,b=(i+1)*(across+1)+edge;
-        indices.push(a,b,a+stride,b,b+stride,a+stride);
-      }
-    }
-    for(const i of [0,segments]){
-      for(let j=0;j<across;j++){
-        const a=i*(across+1)+j,b=a+1;
-        indices.push(a,b,a+stride,b,b+stride,a+stride);
-      }
-    }
-    const geometry=new THREE.BufferGeometry();
-    geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
-    geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-    const ribbon=new THREE.Mesh(geometry,ribbonMaterial);
-    ribbon.castShadow=false;
-    bouquet.add(ribbon);
-    return ribbon;
-  }
+        function petalGeometry(base, kind, petalNo) {
+          const long = 16, across = 10;
+          const p = [], c = [], idx = [];
+          for (let i = 0; i <= long; i++) {
+            const t = i / long;
+            const radial = .09 + .75 * t;
+            const width = (kind === 'slim' ? .23 : .30) * Math.pow(Math.sin(Math.PI * t), .74) * (1 + .09 * Math.sin(petalNo * 1.7));
+            for (let j = 0; j <= across; j++) {
+              const s = j / across * 2 - 1;
+              const x = s * width + .025 * Math.sin(Math.PI * t) * Math.cos(petalNo * 2.1);
+              const y = radial;
+              const z = .035 + .24 * Math.sin(Math.PI * t) * (1 - .49 * s * s) - .085 * t * t + .026 * s * t;
+              p.push(x, y, z);
+              const cc = colorsOnPetal(base, t, s, kind);
+              c.push(cc.r, cc.g, cc.b);
+            }
+          }
+          for (let i = 0; i < long; i++)for (let j = 0; j < across; j++) {
+            const a = i * (across + 1) + j, b = a + across + 1;
+            idx.push(a, b, a + 1, b, b + 1, a + 1);
+          }
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+          geometry.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
+          geometry.setIndex(idx); geometry.computeVertexNormals();
+          return geometry;
+        }
+        const palettePetals = petalPalette.map((hex, i) => petalGeometry(hex, 'round', i));
+        const slenderPetals = petalPalette.map((hex, i) => petalGeometry(hex, 'slim', i));
+        const ivoryPetal = petalGeometry('#fff4e8', 'white', 0);
+        const centers = new THREE.SphereGeometry(1, 18, 12);
+        // Los pétalos y las flores pequeñas comparten geometría (InstancedMesh).
+        // Esto evita cientos de llamadas de dibujo en móviles.
+        const batches = new Map();
+        const zAxis = vec(0, 0, 1), xAxis = vec(1, 0, 0);
+        function addInstance(key, geometry, material, position, scale, quaternion = null) {
+          let batch = batches.get(key);
+          if (!batch) { batch = { geometry, material, matrices: [] }; batches.set(key, batch); }
+          const object = new THREE.Object3D();
+          object.position.copy(position);
+          if (quaternion) object.quaternion.copy(quaternion);
+          if (typeof scale === 'number') object.scale.setScalar(scale);
+          else object.scale.copy(scale);
+          object.updateMatrix(); batch.matrices.push(object.matrix.clone());
+        }
+        function flushInstances() {
+          for (const batch of batches.values()) {
+            const im = new THREE.InstancedMesh(batch.geometry, batch.material, batch.matrices.length);
+            for (let i = 0; i < batch.matrices.length; i++)im.setMatrixAt(i, batch.matrices[i]);
+            im.instanceMatrix.needsUpdate = true;
+            im.frustumCulled = false;
+            moving.add(im);
+          }
+          batches.clear();
+        }
+        function blossom(position, normal, size, paletteIndex, type = 'violet') {
+          const count = type === 'star' ? 6 : type === 'simple4' ? 4 : 5;
+          const baseQ = new THREE.Quaternion().setFromUnitVectors(zAxis, normal.clone().normalize());
+          baseQ.multiply(new THREE.Quaternion().setFromAxisAngle(zAxis, r(-.48, .48)));
+          const pansyScales = [1.12, 1.08, .88, 1.28, 1.24];
+          for (let j = 0; j < count; j++) {
+            const index = (paletteIndex + j % 3) % petalPalette.length;
+            const q = baseQ.clone().multiply(new THREE.Quaternion().setFromAxisAngle(zAxis, j * 2 * Math.PI / count));
+            q.multiply(new THREE.Quaternion().setFromAxisAngle(xAxis, .06 * Math.sin(j + paletteIndex)));
+            const geo = (type === 'star' ? slenderPetals : palettePetals)[index];
+            let scale = size;
+            if (type === 'simple4') scale = vec(.83 * size, .83 * size, .83 * size);
+            if (type === 'pansy') scale = vec(size * pansyScales[j], size * (j < 2 ? .92 : 1.08), size * pansyScales[j]);
+            addInstance((type === 'star' ? 'slim-' : 'round-') + index, geo, petalMaterial, position, scale, q);
+          }
+          if (type !== 'star' && type !== 'simple4') for (let j = 0; j < 5; j++) {
+            const q = baseQ.clone().multiply(new THREE.Quaternion().setFromAxisAngle(zAxis, j * Math.PI * 2 / 5));
+            const p = position.clone().add(vec(0, 0, .13 * size).applyQuaternion(baseQ));
+            addInstance('ivory', ivoryPetal, petalMaterial, p, vec(.20 * size, .28 * size, .54 * size), q);
+          }
+          const centerScale = type === 'simple4' ? .075 : type === 'pansy' ? .102 : .117;
+          addInstance('center', centers, yellowMat,
+            position.clone().add(vec(0, 0, (type === 'simple4' ? .12 : .22) * size).applyQuaternion(baseQ)), centerScale * size);
+          const pollenCount = type === 'simple4' ? 4 : 5;
+          for (let j = 0; j < pollenCount; j++) {
+            const a = j * Math.PI * 2 / pollenCount;
+            const pollen = vec(.083 * Math.cos(a), .083 * Math.sin(a), type === 'simple4' ? .18 : .31).multiplyScalar(size).applyQuaternion(baseQ);
+            addInstance('pollen', sphereSmall, pollenMat, position.clone().add(pollen), .028 * size);
+          }
+        }
 
-  // Banda envolviendo los tallos bajo el nudo.
-  {
-    const n=72,positions=[],colors=[],indices=[];
-    for(let i=0;i<=n;i++){
-      const a=2*Math.PI*i/n,rr=.275;
-      for(let j=0;j<2;j++){
-        const y=-2.69+(j===0?-.145:.145);
-        const pt=vec(Math.cos(a)*rr,y,Math.sin(a)*rr*.86);
-        positions.push(pt.x,pt.y,pt.z);
-        const c=ribbonBase.clone().lerp(ribbonLight,.12+.13*(Math.cos(a)+1)*.5);
-        colors.push(c.r,c.g,c.b);
-      }
-      if(i<n){const k=2*i;indices.push(k,k+1,k+2,k+1,k+3,k+2);}
+        function layeredBloom(center, size, paletteIndex, layers = 3) {
+          for (let i = 0; i < layers; i++) {
+            const offset = vec(r(-.03, .03), r(-.03, .03), i * .07 * size);
+            const s = size * (.48 + .18 * i);
+            blossom(center.clone().add(offset), vec(r(-.08, .08), r(-.02, .22), 1).normalize(), s, paletteIndex + i, 'violet');
+          }
+        }
+
+        function hydrangea(center, radius = 0.62, flowers = 16) {
+          const ga = Math.PI * (3 - Math.sqrt(5));
+          for (let i = 0; i < flowers; i++) {
+            const y = 1 - 2 * (i + .5) / flowers;
+            const rr = Math.sqrt(Math.max(0, 1 - y * y));
+            const a = i * ga;
+            const off = vec(Math.cos(a) * rr * radius, y * .48 * radius, Math.sin(a) * rr * radius * .74);
+            const pos = center.clone().add(off);
+            blossom(pos, off.clone().normalize().add(vec(0, .15, .35)).normalize(), r(.18, .25), Math.floor(random() * petalPalette.length), 'simple4');
+            tube(moving, [center.clone().add(vec(0, -.08, 0)), center.clone().add(off.clone().multiplyScalar(.55)), pos], .008, stemMat, 8);
+          }
+        }
+
+        function bellGeometry() {
+          const pts = [];
+          [[0.04, 0], [0.06, 0.05], [0.16, 0.18], [0.25, 0.34], [0.22, 0.6], [0.15, 0.85], [0.06, 1.0], [0.0, 1.02]].forEach(([x, y]) => pts.push(new THREE.Vector2(x, y)));
+          const g = new THREE.LatheGeometry(pts, 26);
+          g.rotateX(Math.PI);
+          g.translate(0, -.5, 0);
+          return g;
+        }
+        const bellGeo = bellGeometry();
+        const bellMats = ['#8e59cf', '#a778de', '#7f4dbd'].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: .68, emissive: 0x51327b, emissiveIntensity: .08 }));
+        function bellFlower(anchor, scale = 1, matIndex = 0, tilt = -.55) {
+          const bell = new THREE.Mesh(bellGeo, bellMats[matIndex % bellMats.length]);
+          bell.position.copy(anchor);
+          bell.scale.setScalar(.72 * scale);
+          bell.rotation.z = tilt;
+          bell.rotation.x = .18;
+          moving.add(bell);
+          tube(moving, [anchor.clone().add(vec(.02, .38 * scale, -.03)), anchor.clone().add(vec(.11, .18 * scale, .03)), anchor.clone().add(vec(0, .01, 0))], .013, stemMat, 9);
+          for (let i = 0; i < 4; i++) {
+            const bead = new THREE.Mesh(sphereSmall, pollenMat);
+            bead.position.copy(anchor).add(vec(r(-.03, .03), -.22 * scale + r(-.02, .02), r(-.03, .03)));
+            bead.scale.setScalar(.025 * scale);
+            moving.add(bead);
+          }
+        }
+
+        function bud(anchor, dir, size = .16) {
+          const mat = bellMats[Math.floor(random() * bellMats.length)];
+          const budMesh = new THREE.Mesh(sphereSmall, mat);
+          budMesh.position.copy(anchor);
+          budMesh.scale.set(size * .65, size * 1.22, size * .65);
+          budMesh.quaternion.setFromUnitVectors(zAxis, dir.clone().normalize());
+          moving.add(budMesh);
+          tube(moving, [anchor.clone().addScaledVector(dir, -.42 * size), anchor.clone().addScaledVector(dir, -.16 * size), anchor], .008, stemMat, 7);
+        }
+
+        // Flores principales con composición más parecida al ramo de referencia.
+        blossom(vec(0.00, 1.96, 1.28), vec(0, .05, 1), .86, 2, 'violet');
+        blossom(vec(-.82, 2.28, 1.20), vec(-.22, .03, .98), .80, 1, 'pansy');
+        layeredBloom(vec(.38, 3.15, .68), .72, 4, 3);
+        layeredBloom(vec(-1.44, 1.74, 1.08), .58, 5, 2);
+        blossom(vec(-1.26, 3.05, .82), vec(-.12, .22, .97), .54, 6, 'star');
+        hydrangea(vec(1.72, 2.36, .92), .68, 18);
+        bellFlower(vec(1.24, 2.88, .78), .76, 1, -.66);
+        bellFlower(vec(1.55, 2.76, .64), .67, 0, -.48);
+        bellFlower(vec(1.05, 2.66, 1.01), .62, 2, -.58);
+
+        // Filler 3D alrededor para mantener volumen al girar, pero sin uniformidad artificial.
+        const flowerCount = 42;
+        const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+        for (let i = 0; i < flowerCount; i++) {
+          const lat = .92 - 1.84 * (i + .5) / flowerCount;
+          const ring = Math.sqrt(Math.max(0, 1 - lat * lat));
+          const a = i * goldenAngle;
+          const xx = Math.cos(a) * ring, zz = Math.sin(a) * ring;
+          const pos = vec(xx * 1.95, 2.42 + lat * 1.08, zz * 1.15);
+          if (pos.z > .88 && Math.abs(pos.x) < 1.05 && pos.y < 2.65) continue; // deja sitio a las flores protagonistas.
+          pos.x += r(-.08, .08); pos.y += r(-.08, .08); pos.z += r(-.06, .06);
+          const facing = vec(xx * .64, lat * .48 + .12, zz * .88 + .28).normalize();
+          const mode = i % 11 === 0 ? 'star' : (i % 9 === 0 ? 'pansy' : 'violet');
+          blossom(pos, facing, r(.34, .53) * (mode === 'star' ? .84 : 1), Math.floor(random() * petalPalette.length), mode);
+          const attach = vec(pos.x * .12, r(.48, .92), pos.z * .10);
+          tube(moving, [attach, vec(pos.x * .26, 1.38, pos.z * .22), vec(pos.x * .54, 1.98, pos.z * .42), pos], .010, i % 4 ? stemMat : stemDark, 14);
+        }
+
+        // Hojas pequeñas, cerca de la masa floral.
+        function makeLeafGeometry(base) {
+          const p = [], c = [], idx = [], N = 12, M = 6;
+          for (let i = 0; i <= N; i++) {
+            const t = i / N;
+            const width = .21 * Math.pow(Math.sin(Math.PI * t), .84);
+            for (let j = 0; j <= M; j++) {
+              const s = j / M * 2 - 1;
+              p.push(s * width, .65 * t, .09 * Math.sin(Math.PI * t) * (1 - s * s));
+              const cc = color(base).lerp(color(s > 0 ? '#c5e1a2' : '#276b52'), .2 + .14 * Math.abs(s));
+              c.push(cc.r, cc.g, cc.b);
+            }
+          }
+          for (let i = 0; i < N; i++)for (let j = 0; j < M; j++) {
+            const a = i * (M + 1) + j, b = a + M + 1; idx.push(a, b, a + 1, b, b + 1, a + 1);
+          }
+          const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+          g.setAttribute('color', new THREE.Float32BufferAttribute(c, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
+        }
+        const leafGeo = ['#568b70', '#76a787', '#4b916b'].map(makeLeafGeometry);
+        for (let i = 0; i < 46; i++) {
+          const az = r(0, Math.PI * 2), height = r(1.7, 3.34), distance = r(.82, 1.86);
+          const leaf = new THREE.Mesh(choose(leafGeo), leafMaterial);
+          leaf.position.set(Math.cos(az) * distance, height, Math.sin(az) * distance * .72);
+          leaf.rotation.z = -az + Math.PI / 2 + r(-.35, .35);
+          leaf.rotation.y = r(-.65, .65);
+          leaf.scale.setScalar(r(.34, .74)); moving.add(leaf);
+        }
+
+        // Lavanda integrada arriba y hacia atrás.
+        const lavenderMaterials = ['#9565cc', '#a979d8', '#8058bf', '#bd92e4'].map(x =>
+          new THREE.MeshStandardMaterial({ color: x, roughness: .78, emissive: 0x542f83, emissiveIntensity: .09 }));
+        function lavender(start, tip) {
+          const stemPoints = [start, vec(lerp(start.x, tip.x, .55), lerp(start.y, tip.y, .55), lerp(start.z, tip.z, .55)), tip];
+          tube(moving, stemPoints, .012, stemMat, 18);
+          const spikeHeight = .58;
+          for (let row = 0; row < 16; row++) {
+            const t = row / 15;
+            const by = tip.y - spikeHeight * (1 - t);
+            const radius = .095 * Math.pow(1 - t, .65) + .014;
+            for (let j = 0; j < 3; j++) {
+              const a = j * Math.PI * 2 / 3 + row * 1.54;
+              const pt = vec(tip.x + Math.cos(a) * radius, by, tip.z + Math.sin(a) * radius);
+              const matIndex = (row + j) % lavenderMaterials.length;
+              addInstance('lavender-' + matIndex, sphereSmall, lavenderMaterials[matIndex], pt,
+                vec(.058 * (1 - .36 * t), .078 * (1 - .29 * t), .060));
+            }
+          }
+        }
+        for (let i = 0; i < 9; i++) {
+          const a = -1.22 + i * (2.44 / 8);
+          const x = Math.cos(a) * r(1.22, 1.88), z = Math.sin(a) * r(.48, .92) - .12;
+          const top = vec(x, 3.84 + r(.08, .52), z);
+          lavender(vec(x * .18, 2.08, z * .18), top);
+        }
+
+        // Flores diminutas blancas y algunos acentos rosados.
+        function babyBreath(base, pink = false) {
+          const tip = base.clone().add(vec(r(-.09, .09), r(.14, .32), r(-.04, .14)));
+          tube(moving, [base, base.clone().lerp(tip, .52), tip], .007, stemMat, 8);
+          for (let j = 0; j < 5; j++) {
+            const a = j * Math.PI * 2 / 5;
+            const point = tip.clone().add(vec(Math.cos(a) * .095, Math.sin(a) * .068, r(-.02, .06)));
+            addInstance(pink ? 'pink-baby' : 'white-baby', sphereSmall, pink ? pinkMat : whiteMat, point, .043);
+          }
+          addInstance('baby-pollen', sphereSmall, pollenMat, tip, .028);
+        }
+        for (let i = 0; i < 24; i++) {
+          const a = i * goldenAngle;
+          const x = Math.cos(a) * r(.7, 1.95), z = Math.sin(a) * r(.35, 1.08);
+          const y = r(1.98, 3.54);
+          babyBreath(vec(x, y, z), i % 8 === 0);
+        }
+
+        // Algunos capullos para dar variedad vertical sin que salgan tallos sueltos.
+        for (let i = 0; i < 12; i++) {
+          const a = -1.15 + i * (2.3 / 11);
+          const pos = vec(Math.cos(a) * r(.72, 1.75), r(2.7, 3.55), Math.sin(a) * r(.28, .78) + r(-.1, .1));
+          bud(pos, vec(r(-.15, .15), 1, r(-.08, .08)), r(.12, .19));
+        }
+
+        // Envoltorio completamente cerrado en 360º, con pliegues suaves.
+        const paperColor = color('#c69a68');
+        const paperLight = color('#f2d3a0');
+        const paperDark = color('#a7784b');
+        function paperGeometry(tissue = false) {
+          const seg = 160, rows = tissue ? 14 : 32;
+          const positions = [], colors = [], uv = [], indices = [];
+          for (let j = 0; j <= rows; j++) {
+            const t = j / rows;
+            for (let i = 0; i <= seg; i++) {
+              const angle = i / seg * Math.PI * 2;
+              const crease = Math.cos(9 * angle + .36) * .058 + Math.sin(17 * angle - .4) * .018;
+              let rad, y;
+              if (tissue) {
+                const topY = 1.68 + .15 * Math.sin(6 * angle - .7) + .07 * Math.sin(11 * angle + .3);
+                y = lerp(topY, .66, t);
+                rad = lerp(2.15, 1.62, t) * (1 + crease * .55);
+              } else {
+                const topY = 1.38 + .18 * Math.sin(7 * angle + .45) + .075 * Math.sin(13 * angle);
+                y = lerp(topY, -2.72, t);
+                rad = lerp(2.21, .25, t) * (1 + crease * (1 - .54 * t));
+                rad += .065 * Math.sin(t * Math.PI) * Math.sin(7 * angle + .3);
+              }
+              // Una sola superficie con radio constante: sin paneles angulares visibles.
+              const xx = Math.cos(angle) * rad;
+              const zz = Math.sin(angle) * rad * .91;
+              positions.push(xx, y, zz);
+              const base = tissue ? color('#e3c5e8') : paperColor.clone();
+              const amount = .5 + .5 * Math.sin(9 * angle + .2);
+              if (tissue) { base.lerp(color('#fff1fb'), .08 + .13 * (1 - t) + .10 * amount); }
+              else {
+                base.lerp(paperLight, .10 + .16 * amount + .06 * (1 - t));
+                base.lerp(paperDark, .045 + .09 * (1 - amount) + .07 * t);
+                base.multiplyScalar(1 + r(-.012, .012));
+              }
+              colors.push(base.r, base.g, base.b);
+              uv.push(i / seg, j / rows);
+            }
+          }
+          for (let j = 0; j < rows; j++)for (let i = 0; i < seg; i++) {
+            const a = j * (seg + 1) + i, b = a + seg + 1;
+            indices.push(a, a + 1, b, b, a + 1, b + 1);
+          }
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+          geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+          geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+          geometry.setIndex(indices); geometry.computeVertexNormals(); return geometry;
+        }
+        const tissue = new THREE.Mesh(paperGeometry(true), new THREE.MeshStandardMaterial({
+          vertexColors: true, side: THREE.DoubleSide, transparent: true, opacity: .89,
+          roughness: .95, metalness: 0, depthWrite: true, emissive: 0x58305d, emissiveIntensity: .025
+        }));
+        bouquet.add(tissue);
+        const wrapper = new THREE.Mesh(paperGeometry(false), new THREE.MeshStandardMaterial({
+          vertexColors: true, side: THREE.DoubleSide, roughness: 1, metalness: 0,
+          emissive: 0x72471e, emissiveIntensity: .025
+        }));
+        bouquet.add(wrapper);
+        // Borde fino visible sobre la abertura; la base es redonda, no una lámina plana.
+        function circularRim(y, radius, material) {
+          const p = []; for (let i = 0; i <= 128; i++) {
+            const a = i / 128 * 2 * Math.PI;
+            p.push(vec(Math.cos(a) * radius * (1 + .05 * Math.cos(9 * a + .36)),
+              y + .18 * Math.sin(7 * a + .45) + .075 * Math.sin(13 * a),
+              Math.sin(a) * radius * .91 * (1 + .05 * Math.cos(9 * a + .36))));
+          }
+          tube(bouquet, p, .024, material, 150);
+        }
+        const paperRimMat = new THREE.MeshStandardMaterial({ color: 0xd9b48b, roughness: 1 });
+        circularRim(1.38, 2.21, paperRimMat);
+
+        // Tallos inferiores: haces compactos y rectos, sin brotes laterales.
+        for (let i = 0; i < 30; i++) {
+          const a = i * goldenAngle;
+          const radius = r(.01, .15);
+          const x = Math.cos(a) * radius, z = Math.sin(a) * radius * .62;
+          tube(bouquet, [vec(x, -2.54, z), vec(x * 1.05, -3.22, z * .96), vec(x * 1.10, -4.00 + r(-.06, .04), z * .92)],
+            r(.012, .021), i % 4 === 0 ? stemDark : stemMat, 10);
+        }
+
+        // Lazo tridimensional. Cada cinta tiene curvatura, dos caras y cantos con grosor.
+        const ribbonMaterial = new THREE.MeshStandardMaterial({
+          vertexColors: true, roughness: .30, metalness: .06,
+          side: THREE.DoubleSide, emissive: 0x371253, emissiveIntensity: .06
+        });
+        const ribbonBase = color('#8d43c6'), ribbonLight = color('#d5a2f2'), ribbonDeep = color('#60258c');
+
+        function ribbonStrip(points, width, { thickness = .045, twist = .22, loose = false } = {}) {
+          const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+          const segments = 88, across = 8, positions = [], colors = [], indices = [];
+          const up = vec(0, 0, 1);
+          for (let layer = 0; layer < 2; layer++) {
+            for (let i = 0; i <= segments; i++) {
+              const t = i / segments;
+              const center = curve.getPoint(t);
+              const tangent = curve.getTangent(t).normalize();
+              const lateral = vec(-tangent.y, tangent.x, 0).normalize();
+              lateral.applyAxisAngle(tangent, twist * Math.sin(t * Math.PI * 1.8));
+              const widthAt = width * (loose ? .87 + .13 * Math.sin(t * Math.PI) : .78 + .22 * Math.sin(t * Math.PI));
+              for (let j = 0; j <= across; j++) {
+                const u = j / across * 2 - 1;
+                const bent = loose ? .04 : .065;
+                const puff = bent * (1 - u * u) * Math.sin(Math.PI * t);
+                const pt = center.clone()
+                  .addScaledVector(lateral, u * widthAt * .5)
+                  .addScaledVector(up, puff + (layer === 0 ? thickness * .5 : -thickness * .5));
+                positions.push(pt.x, pt.y, pt.z);
+                const shade = ribbonBase.clone()
+                  .lerp(ribbonLight, .12 + .28 * (1 - u * u) + .13 * Math.sin(t * Math.PI * 2) ** 2)
+                  .lerp(ribbonDeep, (u * u) * .13 + (layer === 1 ? .14 : 0));
+                colors.push(shade.r, shade.g, shade.b);
+              }
+            }
+          }
+          const stride = (segments + 1) * (across + 1);
+          for (let layer = 0; layer < 2; layer++) {
+            const offset = layer * stride;
+            for (let i = 0; i < segments; i++)for (let j = 0; j < across; j++) {
+              const a = offset + i * (across + 1) + j, b = a + across + 1;
+              if (layer === 0) indices.push(a, a + 1, b, a + 1, b + 1, b);
+              else indices.push(a, b, a + 1, a + 1, b, b + 1);
+            }
+          }
+          for (let i = 0; i < segments; i++) {
+            for (const edge of [0, across]) {
+              const a = i * (across + 1) + edge, b = (i + 1) * (across + 1) + edge;
+              indices.push(a, b, a + stride, b, b + stride, a + stride);
+            }
+          }
+          for (const i of [0, segments]) {
+            for (let j = 0; j < across; j++) {
+              const a = i * (across + 1) + j, b = a + 1;
+              indices.push(a, b, a + stride, b, b + stride, a + stride);
+            }
+          }
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+          geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+          geometry.setIndex(indices);
+          geometry.computeVertexNormals();
+          const ribbon = new THREE.Mesh(geometry, ribbonMaterial);
+          ribbon.castShadow = false;
+          bouquet.add(ribbon);
+          return ribbon;
+        }
+
+        // Banda envolviendo los tallos bajo el nudo.
+        {
+          const n = 72, positions = [], colors = [], indices = [];
+          for (let i = 0; i <= n; i++) {
+            const a = 2 * Math.PI * i / n, rr = .275;
+            for (let j = 0; j < 2; j++) {
+              const y = -2.69 + (j === 0 ? -.145 : .145);
+              const pt = vec(Math.cos(a) * rr, y, Math.sin(a) * rr * .86);
+              positions.push(pt.x, pt.y, pt.z);
+              const c = ribbonBase.clone().lerp(ribbonLight, .12 + .13 * (Math.cos(a) + 1) * .5);
+              colors.push(c.r, c.g, c.b);
+            }
+            if (i < n) { const k = 2 * i; indices.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+          }
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+          geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+          geo.setIndex(indices); geo.computeVertexNormals();
+          bouquet.add(new THREE.Mesh(geo, ribbonMaterial));
+        }
+
+        // Bucles redondeados: pasan delante y detrás, por lo que se aprecia su volumen.
+        ribbonStrip([
+          vec(-.03, -2.67, .53), vec(-.31, -2.38, .68),
+          vec(-.72, -2.29, .72), vec(-1.04, -2.43, .60),
+          vec(-1.02, -2.72, .55), vec(-.72, -2.81, .65),
+          vec(-.35, -2.77, .76), vec(-.04, -2.67, .55)
+        ], .285, { thickness: .055, twist: .35 });
+        ribbonStrip([
+          vec(.03, -2.67, .54), vec(.34, -2.38, .70),
+          vec(.75, -2.30, .72), vec(1.07, -2.45, .60),
+          vec(1.00, -2.76, .55), vec(.69, -2.80, .66),
+          vec(.29, -2.76, .76), vec(.03, -2.67, .55)
+        ], .295, { thickness: .055, twist: -.33 });
+
+        // Extremos sueltos, con ondulación natural y grosor real.
+        ribbonStrip([
+          vec(-.10, -2.70, .62), vec(-.21, -2.96, .68),
+          vec(-.26, -3.23, .65), vec(-.43, -3.51, .68),
+          vec(-.52, -3.77, .57)
+        ], .245, { thickness: .033, twist: .19, loose: true });
+        ribbonStrip([
+          vec(.11, -2.71, .61), vec(.24, -2.99, .68),
+          vec(.27, -3.26, .75), vec(.42, -3.48, .67),
+          vec(.50, -3.62, .59)
+        ], .235, { thickness: .033, twist: -.17, loose: true });
+
+        // Nudo ovalado y cinta central curvada sobre él.
+        const knotMat = new THREE.MeshStandardMaterial({
+          color: 0x8d43be, roughness: .28, metalness: .05,
+          emissive: 0x431963, emissiveIntensity: .07
+        });
+        meshSphere(bouquet, vec(0, -2.68, .66), [.205, .195, .16], knotMat);
+        ribbonStrip([
+          vec(-.02, -2.49, .69), vec(0, -2.57, .82),
+          vec(0, -2.68, .86), vec(.01, -2.79, .78),
+          vec(.02, -2.86, .67)
+        ], .28, { thickness: .045, twist: .04 });
+
+        flushInstances();
+
+        // Partículas reales: posición, rotación y brillo cambian en CADA fotograma.
+        let width = 0, height = 0, dpr = 1, lastTime = 0;
+        let particles = [], sparkles = [];
+        let dragging = false, previousX = 0, previousY = 0;
+        let targetYaw = -.20, yaw = -.20, targetPitch = 0, pitch = 0;
+        function makeParticles() {
+          particles = []; sparkles = [];
+          const n = width < 550 ? 41 : 80;
+          for (let i = 0; i < n; i++)particles.push({
+            x: r(-20, width + 20), y: r(-20, height + 20),
+            size: r(1.5, 5.1), vx: r(-.33, .22), vy: r(.32, 1.12),
+            angle: r(0, Math.PI * 2), spin: r(-.022, .022), phase: r(0, Math.PI * 2),
+            alpha: r(.23, .74), tint: choose(['#a66ed7', '#c58ee5', '#8e55c3', '#d9b9ef'])
+          });
+          for (let i = 0; i < (width < 550 ? 13 : 22); i++)sparkles.push({ x: r(0, width), y: r(0, height * .7), radius: r(1, 2.4), phase: r(0, 6.28) });
+        }
+        function resize() {
+          const rect = container.getBoundingClientRect(); width = rect.width; height = rect.height;
+          if (width < 1 || height < 1) return;
+          dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+          renderer.setPixelRatio(dpr); renderer.setSize(width, height, false);
+          fxCanvas.width = Math.ceil(width * dpr); fxCanvas.height = Math.ceil(height * dpr);
+          fxCanvas.style.width = width + 'px'; fxCanvas.style.height = height + 'px';
+          fx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const aspect = width / height;
+          const widthScale = clamp(aspect / .78, .76, 1);
+          bouquet.scale.set(widthScale, 1, widthScale);
+          const visualHeight = Math.max(10.15, (6.1 * widthScale) / aspect);
+          camera.left = -visualHeight * aspect / 2; camera.right = visualHeight * aspect / 2;
+          camera.top = visualHeight / 2; camera.bottom = -visualHeight / 2;
+          camera.updateProjectionMatrix();
+          shadow.style.top = Math.min(height * .95, height * (.5 + (4.2 / visualHeight))) + 'px';
+          makeParticles(); render(0);
+        }
+        function drawParticles(time, delta) {
+          fx.clearRect(0, 0, width, height);
+          for (const p of particles) {
+            if (!reduceMotion) {
+              p.x += (p.vx + Math.sin(time * .0009 + p.phase) * .27) * delta;
+              p.y += p.vy * delta;
+              p.angle += p.spin * delta;
+              if (p.y > height + 14) { p.y = -14; p.x = r(0, width); }
+              if (p.x > width + 18) p.x = -15;
+              if (p.x < -18) p.x = width + 15;
+            }
+            fx.save(); fx.globalAlpha = p.alpha;
+            fx.translate(p.x, p.y); fx.rotate(p.angle);
+            fx.scale(.55, 1.34); fx.fillStyle = p.tint;
+            fx.beginPath(); fx.ellipse(0, 0, p.size * .67, p.size, 0, 0, Math.PI * 2); fx.fill(); fx.restore();
+          }
+          for (const s of sparkles) {
+            const brightness = reduceMotion ? .55 : .35 + .48 * (.5 + .5 * Math.sin(time * .0021 + s.phase));
+            fx.globalAlpha = brightness; fx.fillStyle = '#ffffff';
+            fx.shadowColor = '#ffffff'; fx.shadowBlur = 9;
+            fx.beginPath(); fx.arc(s.x, s.y, s.radius, 0, Math.PI * 2); fx.fill();
+          }
+          fx.shadowBlur = 0; fx.globalAlpha = 1;
+        }
+        function render(time) {
+          const delta = lastTime ? clamp((time - lastTime) / 16.667, 0, 2.7) : 1;
+          lastTime = time;
+          const animate = !reduceMotion;
+          const desired = targetYaw + (animate && !dragging ? .024 * Math.sin(time * .00036) : 0);
+          yaw += (desired - yaw) * (animate ? .095 : .30);
+          pitch += (targetPitch - pitch) * .13;
+          bouquet.rotation.y = yaw;
+          bouquet.rotation.x = pitch;
+          moving.rotation.z = animate ? .006 * Math.sin(time * .00047) : 0;
+          renderer.render(scene, camera);
+          drawParticles(time, delta);
+          if (animate) requestAnimationFrame(render);
+        }
+        function requestStaticRender() { if (reduceMotion) requestAnimationFrame(render); }
+        canvas.addEventListener('pointerdown', e => {
+          dragging = true; previousX = e.clientX; previousY = e.clientY;
+          canvas.setPointerCapture(e.pointerId);
+        });
+        canvas.addEventListener('pointermove', e => {
+          if (!dragging) return;
+          targetYaw += (e.clientX - previousX) * .0072;
+          targetPitch = clamp(targetPitch + (e.clientY - previousY) * .002, -.17, .17);
+          previousX = e.clientX; previousY = e.clientY;
+          requestStaticRender();
+        });
+        for (const evt of ['pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(evt, () => dragging = false);
+        window.addEventListener('resize', resize, { passive: true });
+        document.addEventListener('visibilitychange', () => { lastTime = 0; });
+        resize();
+        if (!reduceMotion) requestAnimationFrame(render);
+      })();
     }
-    const geo=new THREE.BufferGeometry();
-    geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
-    geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-    geo.setIndex(indices);geo.computeVertexNormals();
-    bouquet.add(new THREE.Mesh(geo,ribbonMaterial));
-  }
-
-  // Bucles redondeados: pasan delante y detrás, por lo que se aprecia su volumen.
-  ribbonStrip([
-    vec(-.03,-2.67,.53),vec(-.31,-2.38,.68),
-    vec(-.72,-2.29,.72),vec(-1.04,-2.43,.60),
-    vec(-1.02,-2.72,.55),vec(-.72,-2.81,.65),
-    vec(-.35,-2.77,.76),vec(-.04,-2.67,.55)
-  ],.285,{thickness:.055,twist:.35});
-  ribbonStrip([
-    vec(.03,-2.67,.54),vec(.34,-2.38,.70),
-    vec(.75,-2.30,.72),vec(1.07,-2.45,.60),
-    vec(1.00,-2.76,.55),vec(.69,-2.80,.66),
-    vec(.29,-2.76,.76),vec(.03,-2.67,.55)
-  ],.295,{thickness:.055,twist:-.33});
-
-  // Extremos sueltos, con ondulación natural y grosor real.
-  ribbonStrip([
-    vec(-.10,-2.70,.62),vec(-.21,-2.96,.68),
-    vec(-.26,-3.23,.65),vec(-.43,-3.51,.68),
-    vec(-.52,-3.77,.57)
-  ],.245,{thickness:.033,twist:.19,loose:true});
-  ribbonStrip([
-    vec(.11,-2.71,.61),vec(.24,-2.99,.68),
-    vec(.27,-3.26,.75),vec(.42,-3.48,.67),
-    vec(.50,-3.62,.59)
-  ],.235,{thickness:.033,twist:-.17,loose:true});
-
-  // Nudo ovalado y cinta central curvada sobre él.
-  const knotMat=new THREE.MeshStandardMaterial({
-    color:0x8d43be,roughness:.28,metalness:.05,
-    emissive:0x431963,emissiveIntensity:.07
-  });
-  meshSphere(bouquet,vec(0,-2.68,.66),[.205,.195,.16],knotMat);
-  ribbonStrip([
-    vec(-.02,-2.49,.69),vec(0,-2.57,.82),
-    vec(0,-2.68,.86),vec(.01,-2.79,.78),
-    vec(.02,-2.86,.67)
-  ],.28,{thickness:.045,twist:.04});
-
-  flushInstances();
-
-  // Partículas reales: posición, rotación y brillo cambian en CADA fotograma.
-  let width=0,height=0,dpr=1,lastTime=0;
-  let particles=[],sparkles=[];
-  let dragging=false,previousX=0,previousY=0;
-  let targetYaw=-.20,yaw=-.20,targetPitch=0,pitch=0;
-  function makeParticles(){
-    particles=[];sparkles=[];
-    const n=width<550?41:80;
-    for(let i=0;i<n;i++)particles.push({
-      x:r(-20,width+20),y:r(-20,height+20),
-      size:r(1.5,5.1),vx:r(-.33,.22),vy:r(.32,1.12),
-      angle:r(0,Math.PI*2),spin:r(-.022,.022),phase:r(0,Math.PI*2),
-      alpha:r(.23,.74),tint:choose(['#a66ed7','#c58ee5','#8e55c3','#d9b9ef'])
-    });
-    for(let i=0;i<(width<550?13:22);i++)sparkles.push({x:r(0,width),y:r(0,height*.7),radius:r(1,2.4),phase:r(0,6.28)});
-  }
-  function resize(){
-    const rect=container.getBoundingClientRect();width=rect.width;height=rect.height;
-    if(width<1||height<1)return;
-    dpr=Math.min(window.devicePixelRatio||1,1.75);
-    renderer.setPixelRatio(dpr);renderer.setSize(width,height,false);
-    fxCanvas.width=Math.ceil(width*dpr);fxCanvas.height=Math.ceil(height*dpr);
-    fxCanvas.style.width=width+'px';fxCanvas.style.height=height+'px';
-    fx.setTransform(dpr,0,0,dpr,0,0);
-    const aspect=width/height;
-    const widthScale=clamp(aspect/.78,.76,1);
-    bouquet.scale.set(widthScale,1,widthScale);
-    const visualHeight=Math.max(10.15,(6.1*widthScale)/aspect);
-    camera.left=-visualHeight*aspect/2;camera.right=visualHeight*aspect/2;
-    camera.top=visualHeight/2;camera.bottom=-visualHeight/2;
-    camera.updateProjectionMatrix();
-    shadow.style.top=Math.min(height*.95,height*(.5+(4.2/visualHeight)))+'px';
-    makeParticles();render(0);
-  }
-  function drawParticles(time,delta){
-    fx.clearRect(0,0,width,height);
-    for(const p of particles){
-      if(!reduceMotion){
-        p.x+=(p.vx+Math.sin(time*.0009+p.phase)*.27)*delta;
-        p.y+=p.vy*delta;
-        p.angle+=p.spin*delta;
-        if(p.y>height+14){p.y=-14;p.x=r(0,width);}
-        if(p.x>width+18)p.x=-15;
-        if(p.x< -18)p.x=width+15;
-      }
-      fx.save();fx.globalAlpha=p.alpha;
-      fx.translate(p.x,p.y);fx.rotate(p.angle);
-      fx.scale(.55,1.34);fx.fillStyle=p.tint;
-      fx.beginPath();fx.ellipse(0,0,p.size*.67,p.size,0,0,Math.PI*2);fx.fill();fx.restore();
-    }
-    for(const s of sparkles){
-      const brightness=reduceMotion?.55:.35+.48*(.5+.5*Math.sin(time*.0021+s.phase));
-      fx.globalAlpha=brightness;fx.fillStyle='#ffffff';
-      fx.shadowColor='#ffffff';fx.shadowBlur=9;
-      fx.beginPath();fx.arc(s.x,s.y,s.radius,0,Math.PI*2);fx.fill();
-    }
-    fx.shadowBlur=0;fx.globalAlpha=1;
-  }
-  function render(time){
-    const delta=lastTime?clamp((time-lastTime)/16.667,0,2.7):1;
-    lastTime=time;
-    const animate=!reduceMotion;
-    const desired=targetYaw+(animate&&!dragging?.024*Math.sin(time*.00036):0);
-    yaw+=(desired-yaw)*(animate?.095:.30);
-    pitch+=(targetPitch-pitch)*.13;
-    bouquet.rotation.y=yaw;
-    bouquet.rotation.x=pitch;
-    moving.rotation.z=animate?.006*Math.sin(time*.00047):0;
-    renderer.render(scene,camera);
-    drawParticles(time,delta);
-    if(animate)requestAnimationFrame(render);
-  }
-  function requestStaticRender(){if(reduceMotion)requestAnimationFrame(render);}
-  canvas.addEventListener('pointerdown',e=>{
-    dragging=true;previousX=e.clientX;previousY=e.clientY;
-    canvas.setPointerCapture(e.pointerId);
-  });
-  canvas.addEventListener('pointermove',e=>{
-    if(!dragging)return;
-    targetYaw+=(e.clientX-previousX)*.0072;
-    targetPitch=clamp(targetPitch+(e.clientY-previousY)*.002,-.17,.17);
-    previousX=e.clientX;previousY=e.clientY;
-    requestStaticRender();
-  });
-  for(const evt of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(evt,()=>dragging=false);
-  window.addEventListener('resize',resize,{passive:true});
-  document.addEventListener('visibilitychange',()=>{lastTime=0;});
-  resize();
-  if(!reduceMotion)requestAnimationFrame(render);
-})();
-}
-</script>
+  </script>
 </body>
+
 </html>
